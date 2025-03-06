@@ -39,13 +39,7 @@
       background: #2e2e2e;
       color: #e0e0e0;
     }
-    /* Unspecified cards row styling */
-    .unspecified-row {
-      text-align: center;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    /* Each card row is a flex container for a single line layout */
+    /* Each card row is a flex container for a single-line layout */
     .card-row {
       display: flex;
       align-items: center;
@@ -99,6 +93,11 @@
     .remove-btn {
       background-color: #cc0000;
     }
+    /* Read-only row styling override */
+    .card-row.readonly input {
+      background-color: #2e2e2e;
+      border-color: #777;
+    }
   </style>
 </head>
 <body>
@@ -114,9 +113,8 @@
       <label for="handSize">Hand Size:</label>
       <input type="number" id="handSize" value="5" min="1">
     </div>
-    <!-- Read-only row showing unspecified cards left -->
-    <div id="unspecifiedRow" class="unspecified-row">Unspecified Cards Left: 0</div>
     
+    <!-- Rows container: first row is the read-only "Unspecified" row -->
     <div id="rowsContainer"></div>
     <button id="addRow">+ Add Card Group</button>
     <div id="errorMessage" class="error"></div>
@@ -137,17 +135,88 @@
       return result;
     }
     
-    // Update the read-only row that shows the number of unspecified cards.
+    // Create the read-only unspecified row.
+    function createUnspecifiedRow() {
+      const rowsContainer = document.getElementById("rowsContainer");
+      const rowDiv = document.createElement("div");
+      rowDiv.className = "card-row readonly";
+      rowDiv.id = "unspecifiedRow";
+      
+      // Card Name Field.
+      const nameGroup = document.createElement("div");
+      nameGroup.className = "field-group";
+      const nameLabel = document.createElement("label");
+      nameLabel.textContent = "Card Name:";
+      const nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.value = "Unspecified";
+      nameInput.readOnly = true;
+      nameInput.className = "card-name";
+      nameGroup.appendChild(nameLabel);
+      nameGroup.appendChild(nameInput);
+      
+      // Copies in Deck Field.
+      const copiesGroup = document.createElement("div");
+      copiesGroup.className = "field-group";
+      const copiesLabel = document.createElement("label");
+      copiesLabel.textContent = "Copies in Deck:";
+      const copiesInput = document.createElement("input");
+      copiesInput.type = "number";
+      copiesInput.className = "unspecified-copies small-input";
+      copiesInput.value = 0;
+      copiesInput.readOnly = true;
+      copiesGroup.appendChild(copiesLabel);
+      copiesGroup.appendChild(copiesInput);
+      
+      // Minimum in Hand Field.
+      const minGroup = document.createElement("div");
+      minGroup.className = "field-group";
+      const minLabel = document.createElement("label");
+      minLabel.textContent = "Min in Hand:";
+      const minInput = document.createElement("input");
+      minInput.type = "number";
+      minInput.className = "min-hand small-input";
+      minInput.value = 0;
+      minInput.readOnly = true;
+      minGroup.appendChild(minLabel);
+      minGroup.appendChild(minInput);
+      
+      // Maximum in Hand Field.
+      const maxGroup = document.createElement("div");
+      maxGroup.className = "field-group";
+      const maxLabel = document.createElement("label");
+      maxLabel.textContent = "Max in Hand:";
+      const maxInput = document.createElement("input");
+      maxInput.type = "number";
+      maxInput.className = "max-hand small-input";
+      maxInput.value = 0;
+      maxInput.readOnly = true;
+      maxGroup.appendChild(maxLabel);
+      maxGroup.appendChild(maxInput);
+      
+      // Assemble the row.
+      rowDiv.appendChild(nameGroup);
+      rowDiv.appendChild(copiesGroup);
+      rowDiv.appendChild(minGroup);
+      rowDiv.appendChild(maxGroup);
+      
+      // Prepend the unspecified row.
+      rowsContainer.prepend(rowDiv);
+    }
+    
+    // Update the read-only unspecified row with the remaining cards.
     function updateUnspecifiedRow() {
       const deckSize = parseInt(document.getElementById("deckSize").value) || 0;
-      let totalCopiesSpecified = 0;
-      const rowElements = document.querySelectorAll(".card-row");
-      rowElements.forEach(row => {
-        const copies = parseInt(row.querySelector(".copies").value) || 0;
-        totalCopiesSpecified += copies;
+      let totalSpecified = 0;
+      // Sum copies from all editable rows only.
+      document.querySelectorAll(".card-row.editable-row").forEach(row => {
+        totalSpecified += parseInt(row.querySelector(".copies").value) || 0;
       });
-      const unspecified = deckSize - totalCopiesSpecified;
-      document.getElementById("unspecifiedRow").textContent = "Unspecified Cards Left: " + unspecified;
+      const unspecified = deckSize - totalSpecified;
+      const unspecifiedInput = document.querySelector("#unspecifiedRow .unspecified-copies");
+      if (unspecifiedInput) {
+        unspecifiedInput.value = unspecified;
+      }
     }
     
     // Calculate the overall probability that a hand meets all card group constraints.
@@ -172,9 +241,9 @@
         return null;
       }
       
-      // Gather all card groups.
+      // Gather all editable card groups.
       const rows = [];
-      const rowElements = document.querySelectorAll(".card-row");
+      const rowElements = document.querySelectorAll(".card-row.editable-row");
       let totalCopiesSpecified = 0;
       
       rowElements.forEach(row => {
@@ -193,10 +262,10 @@
       
       document.getElementById("errorMessage").textContent = "";
       
-      const R = deckSize - totalCopiesSpecified; // remaining cards not covered by specific groups
+      const R = deckSize - totalCopiesSpecified; // remaining unspecified cards
       const totalWays = binom(deckSize, handSize);
       
-      // Recursively sum over all valid combinations of drawn copies for each card group.
+      // Recursively sum over all valid combinations of drawn copies for each editable card group.
       function rec(index, currentSum, prod) {
         if (index === rows.length) {
           const r = handSize - currentSum;
@@ -272,14 +341,14 @@
       maxInput.max = copies;
     }
     
-    // Create and add a new card group row.
+    // Create and add a new editable card group row.
     function addRow() {
       rowCounter++;
       const rowsContainer = document.getElementById("rowsContainer");
       
-      // Create the container for the card group row.
+      // Create the container for the editable card group row.
       const rowDiv = document.createElement("div");
-      rowDiv.className = "card-row";
+      rowDiv.className = "card-row editable-row";
       
       // Card Name Field.
       const nameGroup = document.createElement("div");
@@ -372,7 +441,8 @@
     document.getElementById("handSize").addEventListener("input", updateResult);
     document.getElementById("addRow").addEventListener("click", addRow);
     
-    // Add an initial card group row.
+    // Create the unspecified row and add an initial editable row.
+    createUnspecifiedRow();
     addRow();
     updateResult();
   </script>
