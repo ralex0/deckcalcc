@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Yu-Gi-Oh Deck Calculator</title>
+  <title>Yu-Gi-Oh Deck Probability Calculator</title>
   <style>
     /* Dark theme styling */
     body {
@@ -114,7 +114,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Yu-Gi-Oh Deck Calculator</h1>
+    <h1>Yu-Gi-Oh Deck Probability Calculator</h1>
     <p>
       This calculator uses hypergeometric probability to estimate the chance of drawing your desired hand.<br>
       Enter your deck size, hand size, and details for each card group. Use the number inputs to set the minimum and maximum copies you want in your hand.
@@ -330,7 +330,7 @@
       updateUnspecifiedRow();
       const resultDiv = document.getElementById("result");
       if (prob === null) {
-        resultDiv.textContent = "Probability: N/A";
+        resultDiv.textContent = "Probability undefined";
         resultDiv.style.borderColor = "#555";
         resultDiv.style.color = "#e0e0e0";
         return;
@@ -341,7 +341,7 @@
       else if (prob > 0.60) { color = "orange"; }
       let emoji = "";
       if (prob >= 0.85) { emoji = " 💪"; }
-      resultDiv.textContent = `Probability: ${percent}%${emoji}`;
+      resultDiv.textContent = `You have a ${percent}%${emoji} chance to open this hand.`;
       resultDiv.style.borderColor = color;
       resultDiv.style.color = color;
     }
