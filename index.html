@@ -90,8 +90,7 @@
     <h1>Yu-Gi-Oh Deck Calculator</h1>
     <p>
       This calculator uses hypergeometric probability to estimate the chance of drawing your desired hand.<br>
-      Enter your deck size, hand size, and details for each card group. Adjust the dual sliders to set the minimum and maximum copies you want in your hand.
-      The probability updates live as you type.
+      Enter your deck size, hand size, and details for each card group. Adjust the sliders to set the minimum and maximum copies you want in your hand.
     </p>
     <div class="inputs">
       <label for="deckSize">Deck Size:</label>
@@ -228,7 +227,7 @@
       const nameInput = document.createElement("input");
       nameInput.type = "text";
       nameInput.className = "card-name";
-      nameInput.placeholder = "e.g., Blue-Eyes";
+      nameInput.placeholder = "e.g., Handtraps, Starters, etc";
       nameInput.addEventListener("input", updateResult);
       
       // Copies in Deck Field
