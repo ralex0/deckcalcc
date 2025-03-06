@@ -22,14 +22,14 @@
     h1 {
       text-align: center;
     }
-    .inputs, .card-row {
+    .inputs {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 15px;
       align-items: center;
     }
-    label {
+    .inputs label {
       flex: 1 0 100px;
     }
     input[type="number"], input[type="text"] {
@@ -39,21 +39,31 @@
       background: #2e2e2e;
       color: #e0e0e0;
     }
+    /* Each card row is a flex container for a single line layout */
+    .card-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      border: 1px solid #555;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    /* Group each field with its label */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .field-group label {
+      font-size: 0.8em;
+      margin-bottom: 2px;
+    }
     /* Widen the card name text box so the placeholder fits */
     .card-name {
       width: 250px;
     }
-    .card-row {
-      border: 1px solid #555;
-      padding: 10px;
-      border-radius: 4px;
-      width: 100%;
-    }
-    .minmax-container {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
+    .small-input {
+      width: 60px;
     }
     .error {
       color: #ff6666;
@@ -66,6 +76,7 @@
       padding: 10px;
       border: 2px solid;
       border-radius: 4px;
+      margin-top: 15px;
     }
     button {
       padding: 8px 12px;
@@ -78,13 +89,9 @@
     button:hover {
       background-color: #004999;
     }
-    .small-input {
-      width: 60px;
-    }
     /* Style for the remove button */
     .remove-btn {
       background-color: #cc0000;
-      margin-left: auto;
     }
   </style>
 </head>
@@ -110,7 +117,7 @@
   <script>
     let rowCounter = 0;
 
-    // Utility function to compute binomial coefficients
+    // Utility function to compute binomial coefficients.
     function binom(n, k) {
       if (k < 0 || k > n) return 0;
       if (k === 0 || k === n) return 1;
@@ -143,7 +150,7 @@
         return null;
       }
       
-      // Gather all card groups
+      // Gather all card groups.
       const rows = [];
       const rowElements = document.querySelectorAll(".card-row");
       let totalCopiesSpecified = 0;
@@ -215,7 +222,7 @@
       resultDiv.style.color = color;
     }
     
-    // Validate and update min and max hand inputs based on copies.
+    // Validate and update min and max in hand based on copies.
     function updateMinMax(rowDiv) {
       const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
       const minInput = rowDiv.querySelector(".min-hand");
@@ -223,7 +230,7 @@
       let minVal = parseInt(minInput.value) || 0;
       let maxVal = parseInt(maxInput.value) || 0;
       
-      // Clamp values to available copies
+      // Clamp values to available copies.
       if (minVal > copies) {
         minVal = copies;
         minInput.value = copies;
@@ -232,12 +239,12 @@
         maxVal = copies;
         maxInput.value = copies;
       }
-      // Ensure min is not greater than max
+      // Ensure min is not greater than max.
       if (minVal > maxVal) {
         maxVal = minVal;
         maxInput.value = maxVal;
       }
-      // Update attributes for additional UI hinting.
+      // Update attributes for input.
       minInput.max = copies;
       maxInput.max = copies;
     }
@@ -247,10 +254,13 @@
       rowCounter++;
       const rowsContainer = document.getElementById("rowsContainer");
       
+      // Create the container for the card group row.
       const rowDiv = document.createElement("div");
       rowDiv.className = "card-row";
       
-      // Card Name Field
+      // Card Name Field.
+      const nameGroup = document.createElement("div");
+      nameGroup.className = "field-group";
       const nameLabel = document.createElement("label");
       nameLabel.textContent = "Card Name:";
       const nameInput = document.createElement("input");
@@ -258,84 +268,7 @@
       nameInput.className = "card-name";
       nameInput.placeholder = "handtrap, starter, etc.";
       nameInput.addEventListener("input", updateResult);
+      nameGroup.appendChild(nameLabel);
+      nameGroup.appendChild(nameInput);
       
-      // Copies in Deck Field
-      const copiesLabel = document.createElement("label");
-      copiesLabel.textContent = "Copies in Deck:";
-      const copiesInput = document.createElement("input");
-      copiesInput.type = "number";
-      copiesInput.className = "copies small-input";
-      copiesInput.value = 3;
-      copiesInput.min = 0;
-      copiesInput.addEventListener("input", function() {
-        updateMinMax(rowDiv);
-        updateResult();
-      });
       
-      // Container for Min and Max in Hand inputs.
-      const minmaxContainer = document.createElement("div");
-      minmaxContainer.className = "minmax-container";
-      
-      const minHandLabel = document.createElement("label");
-      minHandLabel.textContent = "Min in Hand:";
-      const minHandInput = document.createElement("input");
-      minHandInput.type = "number";
-      minHandInput.className = "min-hand small-input";
-      minHandInput.value = 0;
-      minHandInput.min = 0;
-      minHandInput.addEventListener("input", function() {
-        updateMinMax(rowDiv);
-        updateResult();
-      });
-      
-      const maxHandLabel = document.createElement("label");
-      maxHandLabel.textContent = "Max in Hand:";
-      const maxHandInput = document.createElement("input");
-      maxHandInput.type = "number";
-      maxHandInput.className = "max-hand small-input";
-      maxHandInput.value = 0;
-      maxHandInput.min = 0;
-      maxHandInput.addEventListener("input", function() {
-        updateMinMax(rowDiv);
-        updateResult();
-      });
-      
-      // Assemble the min/max container
-      minmaxContainer.appendChild(minHandLabel);
-      minmaxContainer.appendChild(minHandInput);
-      minmaxContainer.appendChild(maxHandLabel);
-      minmaxContainer.appendChild(maxHandInput);
-      
-      // Add a remove button to allow deleting this row.
-      const removeButton = document.createElement("button");
-      removeButton.textContent = "Remove";
-      removeButton.className = "remove-btn";
-      removeButton.addEventListener("click", function() {
-        rowDiv.remove();
-        updateResult();
-      });
-      
-      rowDiv.appendChild(nameLabel);
-      rowDiv.appendChild(nameInput);
-      rowDiv.appendChild(copiesLabel);
-      rowDiv.appendChild(copiesInput);
-      rowDiv.appendChild(minmaxContainer);
-      rowDiv.appendChild(removeButton);
-      
-      rowsContainer.appendChild(rowDiv);
-      
-      // Initialize the min/max input limits based on the copies value.
-      updateMinMax(rowDiv);
-    }
-    
-    // Listeners for deck size and hand size so changes update the result immediately.
-    document.getElementById("deckSize").addEventListener("input", updateResult);
-    document.getElementById("handSize").addEventListener("input", updateResult);
-    document.getElementById("addRow").addEventListener("click", addRow);
-    
-    // Add an initial card group row.
-    addRow();
-    updateResult();
-  </script>
-</body>
-</html>
