@@ -271,4 +271,87 @@
       nameGroup.appendChild(nameLabel);
       nameGroup.appendChild(nameInput);
       
+      // Copies in Deck Field.
+      const copiesGroup = document.createElement("div");
+      copiesGroup.className = "field-group";
+      const copiesLabel = document.createElement("label");
+      copiesLabel.textContent = "Copies in Deck:";
+      const copiesInput = document.createElement("input");
+      copiesInput.type = "number";
+      copiesInput.className = "copies small-input";
+      copiesInput.value = 3;
+      copiesInput.min = 0;
+      copiesInput.addEventListener("input", function() {
+        updateMinMax(rowDiv);
+        updateResult();
+      });
+      copiesGroup.appendChild(copiesLabel);
+      copiesGroup.appendChild(copiesInput);
       
+      // Minimum in Hand Field.
+      const minGroup = document.createElement("div");
+      minGroup.className = "field-group";
+      const minLabel = document.createElement("label");
+      minLabel.textContent = "Min in Hand:";
+      const minInput = document.createElement("input");
+      minInput.type = "number";
+      minInput.className = "min-hand small-input";
+      minInput.value = 0;
+      minInput.min = 0;
+      minInput.addEventListener("input", function() {
+        updateMinMax(rowDiv);
+        updateResult();
+      });
+      minGroup.appendChild(minLabel);
+      minGroup.appendChild(minInput);
+      
+      // Maximum in Hand Field.
+      const maxGroup = document.createElement("div");
+      maxGroup.className = "field-group";
+      const maxLabel = document.createElement("label");
+      maxLabel.textContent = "Max in Hand:";
+      const maxInput = document.createElement("input");
+      maxInput.type = "number";
+      maxInput.className = "max-hand small-input";
+      maxInput.value = 0;
+      maxInput.min = 0;
+      maxInput.addEventListener("input", function() {
+        updateMinMax(rowDiv);
+        updateResult();
+      });
+      maxGroup.appendChild(maxLabel);
+      maxGroup.appendChild(maxInput);
+      
+      // Remove Button.
+      const removeButton = document.createElement("button");
+      removeButton.textContent = "Remove";
+      removeButton.className = "remove-btn";
+      removeButton.addEventListener("click", function() {
+        rowDiv.remove();
+        updateResult();
+      });
+      
+      // Assemble the row.
+      rowDiv.appendChild(nameGroup);
+      rowDiv.appendChild(copiesGroup);
+      rowDiv.appendChild(minGroup);
+      rowDiv.appendChild(maxGroup);
+      rowDiv.appendChild(removeButton);
+      
+      rowsContainer.appendChild(rowDiv);
+      
+      // Initialize the min/max input limits.
+      updateMinMax(rowDiv);
+    }
+    
+    // Listeners for deck size and hand size.
+    document.getElementById("deckSize").addEventListener("input", updateResult);
+    document.getElementById("handSize").addEventListener("input", updateResult);
+    document.getElementById("addRow").addEventListener("click", addRow);
+    
+    // Add an initial card group row.
+    addRow();
+    updateResult();
+  </script>
+</body>
+</html>
