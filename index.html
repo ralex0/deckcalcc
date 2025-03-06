@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Yu-Gi-Oh Deck Probability Calculator</title>
   <style>
-    /* Dark theme styling */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
@@ -32,14 +31,14 @@
     .inputs label {
       flex: 1 0 100px;
     }
-    input[type="number"], input[type="text"] {
+    input[type="number"],
+    input[type="text"] {
       padding: 5px;
       border: 1px solid #555;
       border-radius: 4px;
       background: #2e2e2e;
       color: #e0e0e0;
     }
-    /* Each card row is a flex container for a single-line layout */
     .card-row {
       display: flex;
       align-items: center;
@@ -49,12 +48,10 @@
       border-radius: 4px;
       margin-bottom: 10px;
     }
-    /* Read-only (Unspecified) row appears greyed out */
     .card-row.readonly {
       background-color: #333;
       opacity: 0.7;
     }
-    /* Group each field with its label */
     .field-group {
       display: flex;
       flex-direction: column;
@@ -63,14 +60,12 @@
       font-size: 0.8em;
       margin-bottom: 2px;
     }
-    /* Widen the card name text box so the placeholder fits */
     .card-name {
       width: 250px;
     }
     .small-input {
       width: 60px;
     }
-    /* Plus and minus button styling */
     .row-buttons {
       display: flex;
       flex-direction: column;
@@ -103,7 +98,6 @@
       border-radius: 4px;
       margin-top: 15px;
     }
-    /* Donation widget container sticks to bottom right */
     #donateContainer {
       position: fixed;
       bottom: 20px;
@@ -116,8 +110,8 @@
   <div class="container">
     <h1>Yu-Gi-Oh Deck Probability Calculator</h1>
     <p>
-      This calculator uses hypergeometric probability to estimate the chance of drawing your desired hand.<br>
-      Enter your deck size, hand size, and details for each card group. Use the number inputs to set the minimum and maximum copies you want in your hand.
+      This calculator uses hypergeometric probability to estimate the chance of drawing your desired hand.
+      Enter your deck size, hand size, and details for each card group.
     </p>
     <div class="inputs">
       <label for="deckSize">Deck Size:</label>
@@ -125,365 +119,234 @@
       <label for="handSize">Hand Size:</label>
       <input type="number" id="handSize" value="5" min="1">
     </div>
-    
-    <!-- Rows container: the first row is the read-only Unspecified row -->
     <div id="rowsContainer"></div>
-    
     <div id="errorMessage" class="error"></div>
     <div id="result">Probability: N/A</div>
   </div>
-  
-  <!-- Donation widget positioned fixed to bottom right -->
+
   <div id="donateContainer">
-    <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
-    <script type='text/javascript'>
+    <script type="text/javascript" src="https://storage.ko-fi.com/cdn/widget/Widget_2.js"></script>
+    <script type="text/javascript">
       kofiwidget2.init('Support the dev', '#72a4f2', 'Q5Q51BKX92');
       kofiwidget2.draw();
     </script>
   </div>
-  
+
   <script>
-    let rowCounter = 0;
-    
-    // Utility function to compute binomial coefficients.
-    function binom(n, k) {
-      if (k < 0 || k > n) return 0;
-      if (k === 0 || k === n) return 1;
-      let result = 1;
-      for (let i = 1; i <= k; i++) {
-        result *= (n - i + 1) / i;
-      }
-      return result;
-    }
-    
-    // Create the read-only Unspecified row (greyed out).
-    function createUnspecifiedRow() {
-      const rowsContainer = document.getElementById("rowsContainer");
-      const rowDiv = document.createElement("div");
-      rowDiv.className = "card-row readonly";
-      rowDiv.id = "unspecifiedRow";
-      
-      // Card Name Field.
-      const nameGroup = document.createElement("div");
-      nameGroup.className = "field-group";
-      const nameLabel = document.createElement("label");
-      nameLabel.textContent = "Card Name:";
-      const nameInput = document.createElement("input");
-      nameInput.type = "text";
-      nameInput.value = "Unspecified";
-      nameInput.readOnly = true;
-      nameInput.className = "card-name";
-      nameGroup.appendChild(nameLabel);
-      nameGroup.appendChild(nameInput);
-      
-      // Copies in Deck Field.
-      const copiesGroup = document.createElement("div");
-      copiesGroup.className = "field-group";
-      const copiesLabel = document.createElement("label");
-      copiesLabel.textContent = "Copies in Deck:";
-      const copiesInput = document.createElement("input");
-      copiesInput.type = "number";
-      copiesInput.className = "unspecified-copies small-input";
-      copiesInput.value = 0;
-      copiesInput.readOnly = true;
-      copiesGroup.appendChild(copiesLabel);
-      copiesGroup.appendChild(copiesInput);
-      
-      // Minimum in Hand Field.
-      const minGroup = document.createElement("div");
-      minGroup.className = "field-group";
-      const minLabel = document.createElement("label");
-      minLabel.textContent = "Min in Hand:";
-      const minInput = document.createElement("input");
-      minInput.type = "number";
-      minInput.className = "min-hand small-input";
-      minInput.value = 0;
-      minInput.readOnly = true;
-      minGroup.appendChild(minLabel);
-      minGroup.appendChild(minInput);
-      
-      // Maximum in Hand Field.
-      const maxGroup = document.createElement("div");
-      maxGroup.className = "field-group";
-      const maxLabel = document.createElement("label");
-      maxLabel.textContent = "Max in Hand:";
-      const maxInput = document.createElement("input");
-      maxInput.type = "number";
-      maxInput.className = "max-hand small-input";
-      maxInput.value = 0;
-      maxInput.readOnly = true;
-      maxGroup.appendChild(maxLabel);
-      maxGroup.appendChild(maxInput);
-      
-      // Assemble the row.
-      rowDiv.appendChild(nameGroup);
-      rowDiv.appendChild(copiesGroup);
-      rowDiv.appendChild(minGroup);
-      rowDiv.appendChild(maxGroup);
-      
-      // Prepend the unspecified row.
-      rowsContainer.prepend(rowDiv);
-    }
-    
-    // Update the read-only Unspecified row based on the sum of editable rows.
-    function updateUnspecifiedRow() {
-      const deckSize = parseInt(document.getElementById("deckSize").value) || 0;
-      const handSize = parseInt(document.getElementById("handSize").value) || 0;
-      let totalSpecified = 0;
-      let totalEditableMin = 0;
-      let totalEditableMax = 0;
-      
-      // Sum values from all editable rows.
-      document.querySelectorAll(".card-row.editable-row").forEach(row => {
-        totalSpecified += parseInt(row.querySelector(".copies").value) || 0;
-        totalEditableMin += parseInt(row.querySelector(".min-hand").value) || 0;
-        totalEditableMax += parseInt(row.querySelector(".max-hand").value) || 0;
-      });
-      
-      const R = deckSize - totalSpecified; // remaining unspecified copies
-      // Calculate unspecified min and max in hand.
-      const unspecifiedMin = Math.max(0, handSize - totalEditableMax);
-      const unspecifiedMax = Math.min(R, handSize - totalEditableMin);
-      
-      const unspecifiedRow = document.getElementById("unspecifiedRow");
-      if (unspecifiedRow) {
-        const copiesInput = unspecifiedRow.querySelector(".unspecified-copies");
-        const minInput = unspecifiedRow.querySelector(".min-hand");
-        const maxInput = unspecifiedRow.querySelector(".max-hand");
-        if (copiesInput) { copiesInput.value = R; }
-        if (minInput) { minInput.value = unspecifiedMin; }
-        if (maxInput) { maxInput.value = unspecifiedMax; }
-      }
-    }
-    
-    // Calculate overall probability based on editable rows.
-    function calculateProbability() {
-      const deckSize = parseInt(document.getElementById("deckSize").value) || 0;
-      const handSize = parseInt(document.getElementById("handSize").value) || 0;
-      let errorMsg = "";
-      
-      if (deckSize <= 0) {
-        errorMsg = "Deck size must be greater than 0.";
-        document.getElementById("errorMessage").textContent = errorMsg;
-        return null;
-      }
-      if (handSize <= 0) {
-        errorMsg = "Hand size must be greater than 0.";
-        document.getElementById("errorMessage").textContent = errorMsg;
-        return null;
-      }
-      if (handSize > deckSize) {
-        errorMsg = "Hand size cannot exceed deck size.";
-        document.getElementById("errorMessage").textContent = errorMsg;
-        return null;
-      }
-      
-      // Gather all editable card groups.
-      const rows = [];
-      const rowElements = document.querySelectorAll(".card-row.editable-row");
-      let totalCopiesSpecified = 0;
-      
-      rowElements.forEach(row => {
-        const copies = parseInt(row.querySelector(".copies").value) || 0;
-        const minVal = parseInt(row.querySelector(".min-hand").value) || 0;
-        const maxVal = parseInt(row.querySelector(".max-hand").value) || 0;
-        totalCopiesSpecified += copies;
-        rows.push({ copies, min: minVal, max: maxVal });
-      });
-      
-      if (totalCopiesSpecified > deckSize) {
-        errorMsg = "Total copies specified exceed deck size.";
-        document.getElementById("errorMessage").textContent = errorMsg;
-        return null;
-      }
-      
-      document.getElementById("errorMessage").textContent = "";
-      
-      const R = deckSize - totalCopiesSpecified; // unspecified copies
-      const totalWays = binom(deckSize, handSize);
-      
-      // Recursively sum over valid combinations for each editable group.
-      function rec(index, currentSum, prod) {
-        if (index === rows.length) {
-          const r = handSize - currentSum;
-          if (r < 0 || r > R) return 0;
-          return prod * binom(R, r);
+    (function() {
+      let rowCounter = 0;
+      const $ = document;
+
+      const binom = (n, k) => {
+        if (k < 0 || k > n) return 0;
+        if (k === 0 || k === n) return 1;
+        let result = 1;
+        for (let i = 1; i <= k; i++) {
+          result *= (n - i + 1) / i;
         }
-        let sumRow = 0;
-        const row = rows[index];
-        const lower = row.min;
-        const upper = Math.min(row.max, row.copies);
-        for (let x = lower; x <= upper; x++) {
-          sumRow += rec(index + 1, currentSum + x, prod * binom(row.copies, x));
+        return result;
+      };
+
+      const createFieldGroup = (labelText, initialValue, inputClass, type = "number", readOnly = false) => {
+        const group = $.createElement("div");
+        group.className = "field-group";
+        const label = $.createElement("label");
+        label.textContent = labelText;
+        const input = $.createElement("input");
+        input.type = type;
+        input.className = inputClass;
+        input.value = initialValue;
+        input.readOnly = readOnly;
+        group.append(label, input);
+        return group;
+      };
+
+      const createUnspecifiedRow = () => {
+        const rowsContainer = $.getElementById("rowsContainer");
+        const rowDiv = $.createElement("div");
+        rowDiv.className = "card-row readonly";
+        rowDiv.id = "unspecifiedRow";
+
+        const nameGroup = createTextFieldGroup("Card Name:", "Unspecified", "card-name", "text", true);
+        const copiesGroup = createTextFieldGroup("Copies in Deck:", 0, "unspecified-copies small-input", "number", true);
+        const minGroup = createTextFieldGroup("Min in Hand:", 0, "min-hand small-input", "number", true);
+        const maxGroup = createTextFieldGroup("Max in Hand:", 0, "max-hand small-input", "number", true);
+
+        rowDiv.append(nameGroup, copiesGroup, minGroup, maxGroup);
+        rowsContainer.prepend(rowDiv);
+      };
+
+      const createTextFieldGroup = (labelText, initialValue, inputClass, type = "number", readOnly = false) => {
+        const group = $.createElement("div");
+        group.className = "field-group";
+        const label = $.createElement("label");
+        label.textContent = labelText;
+        const input = $.createElement("input");
+        input.type = type;
+        input.className = inputClass;
+        input.value = initialValue;
+        input.readOnly = readOnly;
+        group.append(label, input);
+        return group;
+      };
+
+      const updateUnspecifiedRow = () => {
+        const deckSize = parseInt($.getElementById("deckSize").value) || 0;
+        const handSize = parseInt($.getElementById("handSize").value) || 0;
+        let totalSpecified = 0, totalEditableMin = 0, totalEditableMax = 0;
+
+        $.querySelectorAll(".card-row.editable-row").forEach(row => {
+          totalSpecified += parseInt(row.querySelector(".copies").value) || 0;
+          totalEditableMin += parseInt(row.querySelector(".min-hand").value) || 0;
+          totalEditableMax += parseInt(row.querySelector(".max-hand").value) || 0;
+        });
+
+        const R = deckSize - totalSpecified;
+        const unspecifiedMin = Math.max(0, handSize - totalEditableMax);
+        const unspecifiedMax = Math.min(R, handSize - totalEditableMin);
+
+        const unspecifiedRow = $.getElementById("unspecifiedRow");
+        if (unspecifiedRow) {
+          unspecifiedRow.querySelector(".unspecified-copies").value = R;
+          unspecifiedRow.querySelector(".min-hand").value = unspecifiedMin;
+          unspecifiedRow.querySelector(".max-hand").value = unspecifiedMax;
         }
-        return sumRow;
-      }
-      
-      const validHands = rec(0, 0, 1);
-      const probability = validHands / totalWays;
-      return probability;
-    }
-    
-    // Update the probability display and unspecified row.
-    function updateResult() {
-      const prob = calculateProbability();
-      updateUnspecifiedRow();
-      const resultDiv = document.getElementById("result");
-      if (prob === null) {
-        resultDiv.textContent = "Probability undefined";
-        resultDiv.style.borderColor = "#555";
-        resultDiv.style.color = "#e0e0e0";
-        return;
-      }
-      const percent = (prob * 100).toFixed(2);
-      let color = "red";
-      if (prob >= 0.75) { color = "green"; }
-      else if (prob > 0.60) { color = "orange"; }
-      let emoji = "";
-      if (prob >= 0.85) { emoji = " 💪"; }
-      resultDiv.textContent = `You have a ${percent}%${emoji} chance to open this hand.`;
-      resultDiv.style.borderColor = color;
-      resultDiv.style.color = color;
-    }
-    
-    // Validate and update min/max in hand for an editable row based on its copies.
-    function updateMinMax(rowDiv) {
-      const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
-      const minInput = rowDiv.querySelector(".min-hand");
-      const maxInput = rowDiv.querySelector(".max-hand");
-      let minVal = parseInt(minInput.value) || 0;
-      let maxVal = parseInt(maxInput.value) || 0;
-      
-      if (minVal > copies) { minVal = copies; minInput.value = copies; }
-      if (maxVal > copies) { maxVal = copies; maxInput.value = copies; }
-      if (minVal > maxVal) { maxVal = minVal; maxInput.value = maxVal; }
-      
-      minInput.max = copies;
-      maxInput.max = copies;
-    }
-    
-    // Create and add a new editable card group row.
-    // If 'afterRow' is provided, insert the new row immediately after it.
-    function addRow(afterRow) {
-      rowCounter++;
-      const rowsContainer = document.getElementById("rowsContainer");
-      
-      const rowDiv = document.createElement("div");
-      rowDiv.className = "card-row editable-row";
-      
-      // Card Name Field.
-      const nameGroup = document.createElement("div");
-      nameGroup.className = "field-group";
-      const nameLabel = document.createElement("label");
-      nameLabel.textContent = "Card Name:";
-      const nameInput = document.createElement("input");
-      nameInput.type = "text";
-      nameInput.className = "card-name";
-      nameInput.placeholder = "handtrap, starter, etc.";
-      nameInput.addEventListener("input", updateResult);
-      nameGroup.appendChild(nameLabel);
-      nameGroup.appendChild(nameInput);
-      
-      // Copies in Deck Field.
-      const copiesGroup = document.createElement("div");
-      copiesGroup.className = "field-group";
-      const copiesLabel = document.createElement("label");
-      copiesLabel.textContent = "Copies in Deck:";
-      const copiesInput = document.createElement("input");
-      copiesInput.type = "number";
-      copiesInput.className = "copies small-input";
-      copiesInput.value = 3;
-      copiesInput.min = 0;
-      copiesInput.addEventListener("input", function() {
-        updateMinMax(rowDiv);
+      };
+
+      const calculateProbability = () => {
+        const deckSize = parseInt($.getElementById("deckSize").value) || 0;
+        const handSize = parseInt($.getElementById("handSize").value) || 0;
+        if (deckSize <= 0 || handSize <= 0 || handSize > deckSize) {
+          $.getElementById("errorMessage").textContent = "Invalid deck or hand size.";
+          return null;
+        }
+        $.getElementById("errorMessage").textContent = "";
+
+        const rows = [];
+        let totalCopiesSpecified = 0;
+        $.querySelectorAll(".card-row.editable-row").forEach(row => {
+          const copies = parseInt(row.querySelector(".copies").value) || 0;
+          const minVal = parseInt(row.querySelector(".min-hand").value) || 0;
+          const maxVal = parseInt(row.querySelector(".max-hand").value) || 0;
+          totalCopiesSpecified += copies;
+          rows.push({ copies, min: minVal, max: maxVal });
+        });
+        if (totalCopiesSpecified > deckSize) {
+          $.getElementById("errorMessage").textContent = "Total copies specified exceed deck size.";
+          return null;
+        }
+
+        const R = deckSize - totalCopiesSpecified;
+        const totalWays = binom(deckSize, handSize);
+
+        const rec = (index, currentSum, prod) => {
+          if (index === rows.length) {
+            const r = handSize - currentSum;
+            if (r < 0 || r > R) return 0;
+            return prod * binom(R, r);
+          }
+          let sumRow = 0;
+          const { copies, min, max } = rows[index];
+          for (let x = min; x <= Math.min(max, copies); x++) {
+            sumRow += rec(index + 1, currentSum + x, prod * binom(copies, x));
+          }
+          return sumRow;
+        };
+
+        return rec(0, 0, 1) / totalWays;
+      };
+
+      const updateResult = () => {
+        const prob = calculateProbability();
+        updateUnspecifiedRow();
+        const resultDiv = $.getElementById("result");
+        if (prob === null) {
+          resultDiv.textContent = "Probability undefined";
+          resultDiv.style.borderColor = "#555";
+          resultDiv.style.color = "#e0e0e0";
+          return;
+        }
+        const percent = (prob * 100).toFixed(2);
+        let color = "red";
+        if (prob >= 0.75) color = "green";
+        else if (prob > 0.60) color = "orange";
+        const emoji = prob >= 0.85 ? " 💪" : "";
+        resultDiv.textContent = `You have a ${percent}%${emoji} chance to open this hand.`;
+        resultDiv.style.borderColor = color;
+        resultDiv.style.color = color;
+      };
+
+      const updateMinMax = rowDiv => {
+        const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
+        const minInput = rowDiv.querySelector(".min-hand");
+        const maxInput = rowDiv.querySelector(".max-hand");
+        let minVal = parseInt(minInput.value) || 0;
+        let maxVal = parseInt(maxInput.value) || 0;
+        if (minVal > copies) { minVal = copies; minInput.value = copies; }
+        if (maxVal > copies) { maxVal = copies; maxInput.value = copies; }
+        if (minVal > maxVal) { maxVal = minVal; maxInput.value = maxVal; }
+        minInput.max = copies;
+        maxInput.max = copies;
+      };
+
+      const createEditableRow = () => {
+        rowCounter++;
+        const rowDiv = $.createElement("div");
+        rowDiv.className = "card-row editable-row";
+
+        const nameGroup = createTextFieldGroup("Card Name:", "handtrap, starter, etc.", "card-name", "text");
+        const copiesGroup = createTextFieldGroup("Copies in Deck:", 3, "copies small-input", "number");
+        const minGroup = createTextFieldGroup("Min in Hand:", 0, "min-hand small-input", "number");
+        const maxGroup = createTextFieldGroup("Max in Hand:", 0, "max-hand small-input", "number");
+
+        const btnContainer = $.createElement("div");
+        btnContainer.className = "row-buttons";
+        const plusBtn = $.createElement("button");
+        plusBtn.textContent = "+";
+        plusBtn.title = "Add new card group after this row";
+        plusBtn.addEventListener("click", () => {
+          createEditableRowAfter(rowDiv);
+          updateResult();
+        });
+        const minusBtn = $.createElement("button");
+        minusBtn.textContent = "–";
+        minusBtn.title = "Remove this card group";
+        minusBtn.addEventListener("click", () => {
+          rowDiv.remove();
+          updateResult();
+        });
+        btnContainer.append(plusBtn, minusBtn);
+
+        rowDiv.append(nameGroup, copiesGroup, minGroup, maxGroup, btnContainer);
+
+        ["copies", "min-hand", "max-hand"].forEach(cls => {
+          rowDiv.querySelector("." + cls).addEventListener("input", () => {
+            updateMinMax(rowDiv);
+            updateResult();
+          });
+        });
+        rowDiv.querySelector(".card-name").addEventListener("input", updateResult);
+
+        return rowDiv;
+      };
+
+      const createEditableRowAfter = afterRow => {
+        const newRow = createEditableRow();
+        afterRow.parentNode.insertBefore(newRow, afterRow.nextSibling);
+        updateMinMax(newRow);
+        return newRow;
+      };
+
+      $.getElementById("deckSize").addEventListener("input", updateResult);
+      $.getElementById("handSize").addEventListener("input", updateResult);
+
+      $.addEventListener("DOMContentLoaded", () => {
+        createUnspecifiedRow();
+        const initialRow = createEditableRow();
+        $.getElementById("rowsContainer").append(initialRow);
         updateResult();
       });
-      copiesGroup.appendChild(copiesLabel);
-      copiesGroup.appendChild(copiesInput);
-      
-      // Minimum in Hand Field.
-      const minGroup = document.createElement("div");
-      minGroup.className = "field-group";
-      const minLabel = document.createElement("label");
-      minLabel.textContent = "Min in Hand:";
-      const minInput = document.createElement("input");
-      minInput.type = "number";
-      minInput.className = "min-hand small-input";
-      minInput.value = 0;
-      minInput.min = 0;
-      minInput.addEventListener("input", function() {
-        updateMinMax(rowDiv);
-        updateResult();
-      });
-      minGroup.appendChild(minLabel);
-      minGroup.appendChild(minInput);
-      
-      // Maximum in Hand Field.
-      const maxGroup = document.createElement("div");
-      maxGroup.className = "field-group";
-      const maxLabel = document.createElement("label");
-      maxLabel.textContent = "Max in Hand:";
-      const maxInput = document.createElement("input");
-      maxInput.type = "number";
-      maxInput.className = "max-hand small-input";
-      maxInput.value = 0;
-      maxInput.min = 0;
-      maxInput.addEventListener("input", function() {
-        updateMinMax(rowDiv);
-        updateResult();
-      });
-      maxGroup.appendChild(maxLabel);
-      maxGroup.appendChild(maxInput);
-      
-      // Create container for + and – buttons.
-      const btnContainer = document.createElement("div");
-      btnContainer.className = "row-buttons";
-      
-      const plusBtn = document.createElement("button");
-      plusBtn.textContent = "+";
-      plusBtn.title = "Add new card group after this row";
-      plusBtn.addEventListener("click", function() {
-        addRow(rowDiv);
-        updateResult();
-      });
-      
-      const minusBtn = document.createElement("button");
-      minusBtn.textContent = "–";
-      minusBtn.title = "Remove this card group";
-      minusBtn.addEventListener("click", function() {
-        rowDiv.remove();
-        updateResult();
-      });
-      
-      btnContainer.appendChild(plusBtn);
-      btnContainer.appendChild(minusBtn);
-      
-      // Assemble the editable row.
-      rowDiv.appendChild(nameGroup);
-      rowDiv.appendChild(copiesGroup);
-      rowDiv.appendChild(minGroup);
-      rowDiv.appendChild(maxGroup);
-      rowDiv.appendChild(btnContainer);
-      
-      // Insert the new row immediately after the 'afterRow' if provided.
-      if (afterRow) {
-        afterRow.parentNode.insertBefore(rowDiv, afterRow.nextSibling);
-      } else {
-        rowsContainer.appendChild(rowDiv);
-      }
-      
-      updateMinMax(rowDiv);
-      return rowDiv;
-    }
-    
-    // Event listeners for deck size and hand size.
-    document.getElementById("deckSize").addEventListener("input", updateResult);
-    document.getElementById("handSize").addEventListener("input", updateResult);
-    
-    // Initialize by creating the unspecified row and one editable row.
-    createUnspecifiedRow();
-    addRow();
-    updateResult();
+    })();
   </script>
 </body>
 </html>
