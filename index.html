@@ -4,19 +4,20 @@
   <meta charset="UTF-8">
   <title>Yu-Gi-Oh Deck Calculator</title>
   <style>
-    /* Basic reset and styling */
+    /* Dark theme styling */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
-      background-color: #f7f7f7;
+      background-color: #121212;
+      color: #e0e0e0;
     }
     .container {
       max-width: 800px;
       margin: auto;
-      background: #fff;
+      background: #1e1e1e;
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
     h1 {
       text-align: center;
@@ -31,27 +32,28 @@
     label {
       flex: 1 0 100px;
     }
-    input[type="number"], input[type="text"] {
+    input[type="number"], input[type="text"], input[type="range"] {
       padding: 5px;
-      border: 1px solid #ccc;
+      border: 1px solid #555;
       border-radius: 4px;
+      background: #2e2e2e;
+      color: #e0e0e0;
     }
     .card-row {
-      border: 1px solid #ddd;
+      border: 1px solid #555;
       padding: 10px;
       border-radius: 4px;
+      width: 100%;
     }
     .slider-container {
       display: flex;
       align-items: center;
       gap: 5px;
       flex: 1;
-    }
-    .slider-container input[type="range"] {
-      flex: 1;
+      flex-wrap: wrap;
     }
     .error {
-      color: red;
+      color: #ff6666;
       margin-bottom: 10px;
     }
     #result {
@@ -66,15 +68,20 @@
       padding: 8px 12px;
       border: none;
       border-radius: 4px;
-      background-color: #007BFF;
+      background-color: #0066cc;
       color: #fff;
       cursor: pointer;
     }
     button:hover {
-      background-color: #0056b3;
+      background-color: #004999;
     }
     .small-input {
       width: 60px;
+    }
+    /* Style for the remove button */
+    .remove-btn {
+      background-color: #cc0000;
+      margin-left: auto;
     }
   </style>
 </head>
@@ -99,6 +106,9 @@
   </div>
   
   <script>
+    // Global counter for unique datalist IDs
+    let rowCounter = 0;
+
     // Utility function to compute binomial coefficients
     function binom(n, k) {
       if (k < 0 || k > n) return 0;
@@ -184,8 +194,8 @@
       const resultDiv = document.getElementById("result");
       if (prob === null) {
         resultDiv.textContent = "Probability: N/A";
-        resultDiv.style.borderColor = "#ccc";
-        resultDiv.style.color = "#000";
+        resultDiv.style.borderColor = "#555";
+        resultDiv.style.color = "#e0e0e0";
         return;
       }
       const percent = (prob * 100).toFixed(2);
@@ -193,7 +203,7 @@
       if (prob >= 0.75) {
         color = "green";
       } else if (prob > 0.60) {
-        color = "yellow";
+        color = "orange";
       }
       let emoji = "";
       if (prob >= 0.85) {
@@ -206,12 +216,13 @@
     
     // Create and add a new card group row.
     function addRow() {
+      rowCounter++;
       const rowsContainer = document.getElementById("rowsContainer");
       
       const rowDiv = document.createElement("div");
       rowDiv.className = "card-row";
       
-      // Card Name Field (listener added for completeness)
+      // Card Name Field
       const nameLabel = document.createElement("label");
       nameLabel.textContent = "Card Name:";
       const nameInput = document.createElement("input");
@@ -237,6 +248,9 @@
       const sliderContainer = document.createElement("div");
       sliderContainer.className = "slider-container";
       
+      const sliderText = document.createTextNode("In Hand: ");
+      sliderContainer.appendChild(sliderText);
+      
       const minSlider = document.createElement("input");
       minSlider.type = "range";
       minSlider.className = "min-slider";
@@ -256,6 +270,20 @@
       const maxDisplay = document.createElement("span");
       maxDisplay.className = "max-val";
       maxDisplay.textContent = "0";
+      
+      // Create a datalist for tick marks with a unique ID.
+      const tickDatalist = document.createElement("datalist");
+      tickDatalist.id = "ticks" + rowCounter;
+      minSlider.setAttribute("list", tickDatalist.id);
+      maxSlider.setAttribute("list", tickDatalist.id);
+      
+      // Append the datalist to the slider container.
+      sliderContainer.appendChild(minSlider);
+      sliderContainer.appendChild(minDisplay);
+      sliderContainer.appendChild(document.createTextNode(" to "));
+      sliderContainer.appendChild(maxSlider);
+      sliderContainer.appendChild(maxDisplay);
+      sliderContainer.appendChild(tickDatalist);
       
       // Function to update slider values and ensure min ≤ max ≤ copies.
       function sliderChange() {
@@ -283,26 +311,29 @@
       minSlider.addEventListener("input", sliderChange);
       maxSlider.addEventListener("input", sliderChange);
       
-      sliderContainer.appendChild(document.createTextNode("In Hand: "));
-      sliderContainer.appendChild(minSlider);
-      sliderContainer.appendChild(minDisplay);
-      sliderContainer.appendChild(document.createTextNode(" to "));
-      sliderContainer.appendChild(maxSlider);
-      sliderContainer.appendChild(maxDisplay);
-      
       rowDiv.appendChild(nameLabel);
       rowDiv.appendChild(nameInput);
       rowDiv.appendChild(copiesLabel);
       rowDiv.appendChild(copiesInput);
       rowDiv.appendChild(sliderContainer);
       
+      // Add a remove button to allow deleting this row.
+      const removeButton = document.createElement("button");
+      removeButton.textContent = "Remove";
+      removeButton.className = "remove-btn";
+      removeButton.addEventListener("click", function() {
+        rowDiv.remove();
+        updateResult();
+      });
+      rowDiv.appendChild(removeButton);
+      
       rowsContainer.appendChild(rowDiv);
       
-      // Initialize the slider max values based on the copies input.
+      // Initialize the slider max values and tick marks based on the copies input.
       updateSliderRange(rowDiv);
     }
     
-    // Update each row's sliders based on the current copies value.
+    // Update each row's sliders based on the current copies value and update tick marks.
     function updateSliderRange(rowDiv) {
       const copiesInput = rowDiv.querySelector(".copies");
       const copiesVal = parseInt(copiesInput.value) || 0;
@@ -320,6 +351,17 @@
       if (parseInt(maxSlider.value) > copiesVal) {
         maxSlider.value = copiesVal;
         rowDiv.querySelector(".max-val").textContent = copiesVal;
+      }
+      
+      // Update tick marks in the datalist based on the new copies value.
+      const tickDatalist = rowDiv.querySelector("datalist");
+      if (tickDatalist) {
+        tickDatalist.innerHTML = "";
+        for (let i = 0; i <= copiesVal; i++) {
+          const option = document.createElement("option");
+          option.value = i;
+          tickDatalist.appendChild(option);
+        }
       }
     }
     
