@@ -32,12 +32,16 @@
     label {
       flex: 1 0 100px;
     }
-    input[type="number"], input[type="text"], input[type="range"] {
+    input[type="number"], input[type="text"] {
       padding: 5px;
       border: 1px solid #555;
       border-radius: 4px;
       background: #2e2e2e;
       color: #e0e0e0;
+    }
+    /* Widen the card name text box so the placeholder fits */
+    .card-name {
+      width: 250px;
     }
     .card-row {
       border: 1px solid #555;
@@ -45,11 +49,10 @@
       border-radius: 4px;
       width: 100%;
     }
-    .slider-container {
+    .minmax-container {
       display: flex;
+      gap: 10px;
       align-items: center;
-      gap: 5px;
-      flex: 1;
       flex-wrap: wrap;
     }
     .error {
@@ -90,7 +93,7 @@
     <h1>Yu-Gi-Oh Deck Calculator</h1>
     <p>
       This calculator uses hypergeometric probability to estimate the chance of drawing your desired hand.<br>
-      Enter your deck size, hand size, and details for each card group. Adjust the sliders to set the minimum and maximum copies you want in your hand.
+      Enter your deck size, hand size, and details for each card group. Use the number inputs to set the minimum and maximum copies you want in your hand.
     </p>
     <div class="inputs">
       <label for="deckSize">Deck Size:</label>
@@ -105,7 +108,6 @@
   </div>
   
   <script>
-    // Global counter for unique datalist IDs
     let rowCounter = 0;
 
     // Utility function to compute binomial coefficients
@@ -148,8 +150,8 @@
       
       rowElements.forEach(row => {
         const copies = parseInt(row.querySelector(".copies").value) || 0;
-        const minVal = parseInt(row.querySelector(".min-val").textContent) || 0;
-        const maxVal = parseInt(row.querySelector(".max-val").textContent) || 0;
+        const minVal = parseInt(row.querySelector(".min-hand").value) || 0;
+        const maxVal = parseInt(row.querySelector(".max-hand").value) || 0;
         totalCopiesSpecified += copies;
         rows.push({ copies, min: minVal, max: maxVal });
       });
@@ -213,6 +215,33 @@
       resultDiv.style.color = color;
     }
     
+    // Validate and update min and max hand inputs based on copies.
+    function updateMinMax(rowDiv) {
+      const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
+      const minInput = rowDiv.querySelector(".min-hand");
+      const maxInput = rowDiv.querySelector(".max-hand");
+      let minVal = parseInt(minInput.value) || 0;
+      let maxVal = parseInt(maxInput.value) || 0;
+      
+      // Clamp values to available copies
+      if (minVal > copies) {
+        minVal = copies;
+        minInput.value = copies;
+      }
+      if (maxVal > copies) {
+        maxVal = copies;
+        maxInput.value = copies;
+      }
+      // Ensure min is not greater than max
+      if (minVal > maxVal) {
+        maxVal = minVal;
+        maxInput.value = maxVal;
+      }
+      // Update attributes for additional UI hinting.
+      minInput.max = copies;
+      maxInput.max = copies;
+    }
+    
     // Create and add a new card group row.
     function addRow() {
       rowCounter++;
@@ -227,7 +256,7 @@
       const nameInput = document.createElement("input");
       nameInput.type = "text";
       nameInput.className = "card-name";
-      nameInput.placeholder = "e.g., Handtraps, Starters, etc";
+      nameInput.placeholder = "handtrap, starter, etc.";
       nameInput.addEventListener("input", updateResult);
       
       // Copies in Deck Field
@@ -239,82 +268,43 @@
       copiesInput.value = 3;
       copiesInput.min = 0;
       copiesInput.addEventListener("input", function() {
-        updateSliderRange(rowDiv);
+        updateMinMax(rowDiv);
         updateResult();
       });
       
-      // Dual slider for minimum and maximum in hand.
-      const sliderContainer = document.createElement("div");
-      sliderContainer.className = "slider-container";
+      // Container for Min and Max in Hand inputs.
+      const minmaxContainer = document.createElement("div");
+      minmaxContainer.className = "minmax-container";
       
-      const sliderText = document.createTextNode("In Hand: ");
-      sliderContainer.appendChild(sliderText);
-      
-      const minSlider = document.createElement("input");
-      minSlider.type = "range";
-      minSlider.className = "min-slider";
-      minSlider.min = 0;
-      minSlider.value = 0;
-      
-      const minDisplay = document.createElement("span");
-      minDisplay.className = "min-val";
-      minDisplay.textContent = "0";
-      
-      const maxSlider = document.createElement("input");
-      maxSlider.type = "range";
-      maxSlider.className = "max-slider";
-      maxSlider.min = 0;
-      maxSlider.value = 0;
-      
-      const maxDisplay = document.createElement("span");
-      maxDisplay.className = "max-val";
-      maxDisplay.textContent = "0";
-      
-      // Create a datalist for tick marks with a unique ID.
-      const tickDatalist = document.createElement("datalist");
-      tickDatalist.id = "ticks" + rowCounter;
-      minSlider.setAttribute("list", tickDatalist.id);
-      maxSlider.setAttribute("list", tickDatalist.id);
-      
-      // Append the datalist to the slider container.
-      sliderContainer.appendChild(minSlider);
-      sliderContainer.appendChild(minDisplay);
-      sliderContainer.appendChild(document.createTextNode(" to "));
-      sliderContainer.appendChild(maxSlider);
-      sliderContainer.appendChild(maxDisplay);
-      sliderContainer.appendChild(tickDatalist);
-      
-      // Function to update slider values and ensure min ≤ max ≤ copies.
-      function sliderChange() {
-        let minVal = parseInt(minSlider.value);
-        let maxVal = parseInt(maxSlider.value);
-        const copiesVal = parseInt(copiesInput.value) || 0;
-        if (minVal > maxVal) {
-          maxVal = minVal;
-          maxSlider.value = maxVal;
-        }
-        if (maxVal > copiesVal) {
-          maxVal = copiesVal;
-          maxSlider.value = maxVal;
-        }
-        if (minVal > copiesVal) {
-          minVal = copiesVal;
-          minSlider.value = minVal;
-        }
-        minDisplay.textContent = minVal;
-        maxDisplay.textContent = maxVal;
+      const minHandLabel = document.createElement("label");
+      minHandLabel.textContent = "Min in Hand:";
+      const minHandInput = document.createElement("input");
+      minHandInput.type = "number";
+      minHandInput.className = "min-hand small-input";
+      minHandInput.value = 0;
+      minHandInput.min = 0;
+      minHandInput.addEventListener("input", function() {
+        updateMinMax(rowDiv);
         updateResult();
-      }
+      });
       
-      // Add listeners to both sliders so any adjustment updates the result.
-      minSlider.addEventListener("input", sliderChange);
-      maxSlider.addEventListener("input", sliderChange);
+      const maxHandLabel = document.createElement("label");
+      maxHandLabel.textContent = "Max in Hand:";
+      const maxHandInput = document.createElement("input");
+      maxHandInput.type = "number";
+      maxHandInput.className = "max-hand small-input";
+      maxHandInput.value = 0;
+      maxHandInput.min = 0;
+      maxHandInput.addEventListener("input", function() {
+        updateMinMax(rowDiv);
+        updateResult();
+      });
       
-      rowDiv.appendChild(nameLabel);
-      rowDiv.appendChild(nameInput);
-      rowDiv.appendChild(copiesLabel);
-      rowDiv.appendChild(copiesInput);
-      rowDiv.appendChild(sliderContainer);
+      // Assemble the min/max container
+      minmaxContainer.appendChild(minHandLabel);
+      minmaxContainer.appendChild(minHandInput);
+      minmaxContainer.appendChild(maxHandLabel);
+      minmaxContainer.appendChild(maxHandInput);
       
       // Add a remove button to allow deleting this row.
       const removeButton = document.createElement("button");
@@ -324,44 +314,18 @@
         rowDiv.remove();
         updateResult();
       });
+      
+      rowDiv.appendChild(nameLabel);
+      rowDiv.appendChild(nameInput);
+      rowDiv.appendChild(copiesLabel);
+      rowDiv.appendChild(copiesInput);
+      rowDiv.appendChild(minmaxContainer);
       rowDiv.appendChild(removeButton);
       
       rowsContainer.appendChild(rowDiv);
       
-      // Initialize the slider max values and tick marks based on the copies input.
-      updateSliderRange(rowDiv);
-    }
-    
-    // Update each row's sliders based on the current copies value and update tick marks.
-    function updateSliderRange(rowDiv) {
-      const copiesInput = rowDiv.querySelector(".copies");
-      const copiesVal = parseInt(copiesInput.value) || 0;
-      
-      const minSlider = rowDiv.querySelector(".min-slider");
-      const maxSlider = rowDiv.querySelector(".max-slider");
-      
-      minSlider.max = copiesVal;
-      maxSlider.max = copiesVal;
-      
-      if (parseInt(minSlider.value) > copiesVal) {
-        minSlider.value = copiesVal;
-        rowDiv.querySelector(".min-val").textContent = copiesVal;
-      }
-      if (parseInt(maxSlider.value) > copiesVal) {
-        maxSlider.value = copiesVal;
-        rowDiv.querySelector(".max-val").textContent = copiesVal;
-      }
-      
-      // Update tick marks in the datalist based on the new copies value.
-      const tickDatalist = rowDiv.querySelector("datalist");
-      if (tickDatalist) {
-        tickDatalist.innerHTML = "";
-        for (let i = 0; i <= copiesVal; i++) {
-          const option = document.createElement("option");
-          option.value = i;
-          tickDatalist.appendChild(option);
-        }
-      }
+      // Initialize the min/max input limits based on the copies value.
+      updateMinMax(rowDiv);
     }
     
     // Listeners for deck size and hand size so changes update the result immediately.
