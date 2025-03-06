@@ -103,6 +103,11 @@
       border-radius: 4px;
       margin-top: 15px;
     }
+    /* Donation container styling */
+    #donateContainer {
+      text-align: center;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -124,6 +129,16 @@
     
     <div id="errorMessage" class="error"></div>
     <div id="result">Probability: N/A</div>
+  </div>
+  
+  <!-- Donation widget, centered and non-intrusive -->
+  <div id="donateContainer">
+    <!-- Donate button (Ko-fi widget) -->
+    <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
+    <script type='text/javascript'>
+      kofiwidget2.init('Support the dev', '#72a4f2', 'Q5Q51BKX92');
+      kofiwidget2.draw();
+    </script>
   </div>
   
   <script>
