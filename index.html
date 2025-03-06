@@ -39,6 +39,12 @@
       background: #2e2e2e;
       color: #e0e0e0;
     }
+    /* Unspecified cards row styling */
+    .unspecified-row {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
     /* Each card row is a flex container for a single line layout */
     .card-row {
       display: flex;
@@ -108,6 +114,9 @@
       <label for="handSize">Hand Size:</label>
       <input type="number" id="handSize" value="5" min="1">
     </div>
+    <!-- Read-only row showing unspecified cards left -->
+    <div id="unspecifiedRow" class="unspecified-row">Unspecified Cards Left: 0</div>
+    
     <div id="rowsContainer"></div>
     <button id="addRow">+ Add Card Group</button>
     <div id="errorMessage" class="error"></div>
@@ -126,6 +135,19 @@
         result *= (n - i + 1) / i;
       }
       return result;
+    }
+    
+    // Update the read-only row that shows the number of unspecified cards.
+    function updateUnspecifiedRow() {
+      const deckSize = parseInt(document.getElementById("deckSize").value) || 0;
+      let totalCopiesSpecified = 0;
+      const rowElements = document.querySelectorAll(".card-row");
+      rowElements.forEach(row => {
+        const copies = parseInt(row.querySelector(".copies").value) || 0;
+        totalCopiesSpecified += copies;
+      });
+      const unspecified = deckSize - totalCopiesSpecified;
+      document.getElementById("unspecifiedRow").textContent = "Unspecified Cards Left: " + unspecified;
     }
     
     // Calculate the overall probability that a hand meets all card group constraints.
@@ -199,6 +221,7 @@
     // Update the probability display with appropriate color coding and emoji.
     function updateResult() {
       const prob = calculateProbability();
+      updateUnspecifiedRow();
       const resultDiv = document.getElementById("result");
       if (prob === null) {
         resultDiv.textContent = "Probability: N/A";
