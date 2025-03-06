@@ -103,10 +103,12 @@
       border-radius: 4px;
       margin-top: 15px;
     }
-    /* Donation container styling */
+    /* Donation widget container sticks to bottom right */
     #donateContainer {
-      text-align: center;
-      margin-top: 20px;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
     }
   </style>
 </head>
@@ -131,9 +133,8 @@
     <div id="result">Probability: N/A</div>
   </div>
   
-  <!-- Donation widget, centered and non-intrusive -->
+  <!-- Donation widget positioned fixed to bottom right -->
   <div id="donateContainer">
-    <!-- Donate button (Ko-fi widget) -->
     <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
     <script type='text/javascript'>
       kofiwidget2.init('Support the dev', '#72a4f2', 'Q5Q51BKX92');
