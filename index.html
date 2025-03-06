@@ -135,7 +135,7 @@
       return result;
     }
     
-    // Create the read-only unspecified row.
+    // Create the read-only Unspecified row.
     function createUnspecifiedRow() {
       const rowsContainer = document.getElementById("rowsContainer");
       const rowDiv = document.createElement("div");
@@ -204,18 +204,40 @@
       rowsContainer.prepend(rowDiv);
     }
     
-    // Update the read-only unspecified row with the remaining cards.
+    // Update the read-only Unspecified row based on editable rows.
     function updateUnspecifiedRow() {
       const deckSize = parseInt(document.getElementById("deckSize").value) || 0;
+      const handSize = parseInt(document.getElementById("handSize").value) || 0;
       let totalSpecified = 0;
-      // Sum copies from all editable rows only.
+      let totalEditableMin = 0;
+      let totalEditableMax = 0;
+      
+      // Sum values from all editable rows.
       document.querySelectorAll(".card-row.editable-row").forEach(row => {
         totalSpecified += parseInt(row.querySelector(".copies").value) || 0;
+        totalEditableMin += parseInt(row.querySelector(".min-hand").value) || 0;
+        totalEditableMax += parseInt(row.querySelector(".max-hand").value) || 0;
       });
-      const unspecified = deckSize - totalSpecified;
-      const unspecifiedInput = document.querySelector("#unspecifiedRow .unspecified-copies");
-      if (unspecifiedInput) {
-        unspecifiedInput.value = unspecified;
+      
+      const R = deckSize - totalSpecified; // Unspecified copies
+      // Calculate unspecified min and max in hand.
+      const unspecifiedMin = Math.max(0, handSize - totalEditableMax);
+      const unspecifiedMax = Math.min(R, handSize - totalEditableMin);
+      
+      const unspecifiedRow = document.getElementById("unspecifiedRow");
+      if (unspecifiedRow) {
+        const copiesInput = unspecifiedRow.querySelector(".unspecified-copies");
+        const minInput = unspecifiedRow.querySelector(".min-hand");
+        const maxInput = unspecifiedRow.querySelector(".max-hand");
+        if (copiesInput) {
+          copiesInput.value = R;
+        }
+        if (minInput) {
+          minInput.value = unspecifiedMin;
+        }
+        if (maxInput) {
+          maxInput.value = unspecifiedMax;
+        }
       }
     }
     
@@ -265,7 +287,7 @@
       const R = deckSize - totalCopiesSpecified; // remaining unspecified cards
       const totalWays = binom(deckSize, handSize);
       
-      // Recursively sum over all valid combinations of drawn copies for each editable card group.
+      // Recursively sum over valid combinations for each editable group.
       function rec(index, currentSum, prod) {
         if (index === rows.length) {
           const r = handSize - currentSum;
@@ -287,7 +309,7 @@
       return probability;
     }
     
-    // Update the probability display with appropriate color coding and emoji.
+    // Update the probability display and unspecified row.
     function updateResult() {
       const prob = calculateProbability();
       updateUnspecifiedRow();
@@ -314,7 +336,7 @@
       resultDiv.style.color = color;
     }
     
-    // Validate and update min and max in hand based on copies.
+    // Validate and update min/max in hand for an editable row based on its copies.
     function updateMinMax(rowDiv) {
       const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
       const minInput = rowDiv.querySelector(".min-hand");
@@ -336,7 +358,7 @@
         maxVal = minVal;
         maxInput.value = maxVal;
       }
-      // Update attributes for input.
+      // Update attributes.
       minInput.max = copies;
       maxInput.max = copies;
     }
@@ -346,7 +368,7 @@
       rowCounter++;
       const rowsContainer = document.getElementById("rowsContainer");
       
-      // Create the container for the editable card group row.
+      // Create the container for the editable row.
       const rowDiv = document.createElement("div");
       rowDiv.className = "card-row editable-row";
       
