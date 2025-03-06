@@ -346,12 +346,12 @@
       maxInput.max = copies;
     }
     
-    // Create and add a new editable card group row with + and – buttons.
-    function addRow() {
+    // Create and add a new editable card group row.
+    // If 'afterRow' is provided, insert the new row immediately after it.
+    function addRow(afterRow) {
       rowCounter++;
       const rowsContainer = document.getElementById("rowsContainer");
       
-      // Create the container for an editable row.
       const rowDiv = document.createElement("div");
       rowDiv.className = "card-row editable-row";
       
@@ -425,9 +425,9 @@
       
       const plusBtn = document.createElement("button");
       plusBtn.textContent = "+";
-      plusBtn.title = "Add new card group";
+      plusBtn.title = "Add new card group after this row";
       plusBtn.addEventListener("click", function() {
-        addRow();
+        addRow(rowDiv);
         updateResult();
       });
       
@@ -449,8 +449,15 @@
       rowDiv.appendChild(maxGroup);
       rowDiv.appendChild(btnContainer);
       
-      rowsContainer.appendChild(rowDiv);
+      // Insert the new row immediately after the 'afterRow' if provided.
+      if (afterRow) {
+        afterRow.parentNode.insertBefore(rowDiv, afterRow.nextSibling);
+      } else {
+        rowsContainer.appendChild(rowDiv);
+      }
+      
       updateMinMax(rowDiv);
+      return rowDiv;
     }
     
     // Event listeners for deck size and hand size.
