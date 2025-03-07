@@ -74,13 +74,24 @@
       padding: 0;
       border: none;
       border-radius: 4px;
-      background-color: #0066cc;
-      color: #fff;
       cursor: pointer;
       transition: background 0.3s;
     }
-    .row-buttons button:hover {
-      background-color: #004999;
+    /* Grayscale buttons for dark mode */
+    body:not(.light-mode) .row-buttons button {
+      background-color: #555;
+      color: #fff;
+    }
+    body:not(.light-mode) .row-buttons button:hover {
+      background-color: #777;
+    }
+    /* Grayscale buttons for light mode */
+    body.light-mode .row-buttons button {
+      background-color: #ccc;
+      color: #000;
+    }
+    body.light-mode .row-buttons button:hover {
+      background-color: #aaa;
     }
     .error { color: #ff6666; margin-bottom: 10px; }
     #result {
@@ -133,6 +144,7 @@
       cursor: pointer;
       transition: background 0.3s;
     }
+    /* Hover effect: lighten in dark mode, darken in light mode */
     body:not(.light-mode) #themeToggle:hover {
       background-color: rgba(255,255,255,0.2);
     }
