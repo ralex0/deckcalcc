@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <title>Yu-Gi-Oh Deck Probability Calculator</title>
   <style>
+    /* Base styles */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
       background-color: #121212;
       color: #e0e0e0;
+      transition: background-color 0.3s, color 0.3s;
     }
     .container {
       max-width: 800px;
@@ -17,10 +19,9 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      transition: background 0.3s;
     }
-    h1 {
-      text-align: center;
-    }
+    h1 { text-align: center; }
     .inputs {
       display: flex;
       flex-wrap: wrap;
@@ -28,9 +29,7 @@
       margin-bottom: 15px;
       align-items: center;
     }
-    .inputs label {
-      flex: 1 0 100px;
-    }
+    .inputs label { flex: 1 0 100px; }
     input[type="number"],
     input[type="text"] {
       padding: 5px;
@@ -38,6 +37,7 @@
       border-radius: 4px;
       background: #2e2e2e;
       color: #e0e0e0;
+      transition: background 0.3s, color 0.3s, border-color 0.3s;
     }
     .card-row {
       display: flex;
@@ -60,12 +60,8 @@
       font-size: 0.8em;
       margin-bottom: 2px;
     }
-    .card-name {
-      width: 250px;
-    }
-    .small-input {
-      width: 60px;
-    }
+    .card-name { width: 250px; }
+    .small-input { width: 60px; }
     .row-buttons {
       display: flex;
       flex-direction: column;
@@ -81,14 +77,12 @@
       background-color: #0066cc;
       color: #fff;
       cursor: pointer;
+      transition: background 0.3s;
     }
     .row-buttons button:hover {
       background-color: #004999;
     }
-    .error {
-      color: #ff6666;
-      margin-bottom: 10px;
-    }
+    .error { color: #ff6666; margin-bottom: 10px; }
     #result {
       font-size: 1.5em;
       font-weight: bold;
@@ -98,11 +92,54 @@
       border-radius: 4px;
       margin-top: 15px;
     }
+    /* Light mode overrides */
+    body.light-mode {
+      background-color: #f7f7f7;
+      color: #000;
+    }
+    body.light-mode .container {
+      background: #fff;
+      color: #000;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    body.light-mode input[type="number"],
+    body.light-mode input[type="text"] {
+      background: #fff;
+      color: #000;
+      border-color: #ccc;
+    }
+    body.light-mode .card-row {
+      border-color: #ccc;
+    }
+    /* In light mode, adjust read-only row styling */
+    body.light-mode .card-row.readonly {
+      background-color: #f0f0f0;
+      opacity: 1;
+    }
+    /* Fixed containers for controls */
+    #themeContainer {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1001;
+    }
+    #themeToggle {
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 50%;
+      background-color: #0066cc;
+      color: #fff;
+      font-size: 1.5em;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #themeToggle:hover { background-color: #004999; }
     #donateContainer {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      z-index: 1000;
+      z-index: 1001;
     }
   </style>
 </head>
@@ -124,6 +161,9 @@
     <div id="result">Probability: N/A</div>
   </div>
 
+  <div id="themeContainer">
+    <button id="themeToggle">☀️</button>
+  </div>
   <div id="donateContainer">
     <script type="text/javascript" src="https://storage.ko-fi.com/cdn/widget/Widget_2.js"></script>
     <script type="text/javascript">
@@ -167,27 +207,13 @@
         rowDiv.className = "card-row readonly";
         rowDiv.id = "unspecifiedRow";
 
-        const nameGroup = createTextFieldGroup("Card Name:", "Unspecified", "card-name", "text", true);
-        const copiesGroup = createTextFieldGroup("Copies in Deck:", 0, "unspecified-copies small-input", "number", true);
-        const minGroup = createTextFieldGroup("Min in Hand:", 0, "min-hand small-input", "number", true);
-        const maxGroup = createTextFieldGroup("Max in Hand:", 0, "max-hand small-input", "number", true);
+        const nameGroup = createFieldGroup("Card Name:", "Unspecified", "card-name", "text", true);
+        const copiesGroup = createFieldGroup("Copies in Deck:", 0, "unspecified-copies small-input", "number", true);
+        const minGroup = createFieldGroup("Min in Hand:", 0, "min-hand small-input", "number", true);
+        const maxGroup = createFieldGroup("Max in Hand:", 0, "max-hand small-input", "number", true);
 
         rowDiv.append(nameGroup, copiesGroup, minGroup, maxGroup);
         rowsContainer.prepend(rowDiv);
-      };
-
-      const createTextFieldGroup = (labelText, initialValue, inputClass, type = "number", readOnly = false) => {
-        const group = $.createElement("div");
-        group.className = "field-group";
-        const label = $.createElement("label");
-        label.textContent = labelText;
-        const input = $.createElement("input");
-        input.type = type;
-        input.className = inputClass;
-        input.value = initialValue;
-        input.readOnly = readOnly;
-        group.append(label, input);
-        return group;
       };
 
       const updateUnspecifiedRow = () => {
@@ -269,7 +295,7 @@
         const percent = (prob * 100).toFixed(2);
         let color = "red";
         if (prob >= 0.75) color = "green";
-        else if (prob >= 0.65) color = "orange";
+        else if (prob > 0.60) color = "orange";
         const emoji = prob >= 0.85 ? " 💪" : "";
         resultDiv.textContent = `You have a ${percent}%${emoji} chance to open this hand.`;
         resultDiv.style.borderColor = color;
@@ -294,10 +320,10 @@
         const rowDiv = $.createElement("div");
         rowDiv.className = "card-row editable-row";
 
-        const nameGroup = createTextFieldGroup("Card Name:", "handtrap, starter, etc.", "card-name", "text");
-        const copiesGroup = createTextFieldGroup("Copies in Deck:", 3, "copies small-input", "number");
-        const minGroup = createTextFieldGroup("Min in Hand:", 0, "min-hand small-input", "number");
-        const maxGroup = createTextFieldGroup("Max in Hand:", 0, "max-hand small-input", "number");
+        const nameGroup = createFieldGroup("Card Name:", "handtrap, starter, etc.", "card-name", "text");
+        const copiesGroup = createFieldGroup("Copies in Deck:", 3, "copies small-input", "number");
+        const minGroup = createFieldGroup("Min in Hand:", 0, "min-hand small-input", "number");
+        const maxGroup = createFieldGroup("Max in Hand:", 0, "max-hand small-input", "number");
 
         const btnContainer = $.createElement("div");
         btnContainer.className = "row-buttons";
@@ -337,10 +363,34 @@
         return newRow;
       };
 
+      // Theme toggle logic
+      const themeToggleBtn = $.getElementById("themeToggle");
+      const applyTheme = theme => {
+        if (theme === "light") {
+          $.body.classList.add("light-mode");
+          themeToggleBtn.textContent = "🌙";
+        } else {
+          $.body.classList.remove("light-mode");
+          themeToggleBtn.textContent = "☀️";
+        }
+      };
+      const toggleTheme = () => {
+        const current = localStorage.getItem("theme") || "dark";
+        const next = current === "dark" ? "light" : "dark";
+        localStorage.setItem("theme", next);
+        applyTheme(next);
+      };
+      themeToggleBtn.addEventListener("click", toggleTheme);
+      const initTheme = () => {
+        const saved = localStorage.getItem("theme") || "dark";
+        applyTheme(saved);
+      };
+
       $.getElementById("deckSize").addEventListener("input", updateResult);
       $.getElementById("handSize").addEventListener("input", updateResult);
 
       $.addEventListener("DOMContentLoaded", () => {
+        initTheme();
         createUnspecifiedRow();
         const initialRow = createEditableRow();
         $.getElementById("rowsContainer").append(initialRow);
