@@ -1,0 +1,1 @@
+This is a remake of the deck probability calculator that used to be hosted at www.yugioh.party. The original authors of the page were Rustywolf & Bilaterus of YGOrganization. They describe it here https://ygorganization.com/maths1/
