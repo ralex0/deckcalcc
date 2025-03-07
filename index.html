@@ -111,7 +111,6 @@
     body.light-mode .card-row {
       border-color: #ccc;
     }
-    /* In light mode, adjust read-only row styling */
     body.light-mode .card-row.readonly {
       background-color: #f0f0f0;
       opacity: 1;
@@ -128,13 +127,18 @@
       height: 40px;
       border: none;
       border-radius: 50%;
-      background-color: #0066cc;
-      color: #fff;
+      background-color: transparent;
+      color: inherit;
       font-size: 1.5em;
       cursor: pointer;
       transition: background 0.3s;
     }
-    #themeToggle:hover { background-color: #004999; }
+    body:not(.light-mode) #themeToggle:hover {
+      background-color: rgba(255,255,255,0.2);
+    }
+    body.light-mode #themeToggle:hover {
+      background-color: rgba(0,0,0,0.1);
+    }
     #donateContainer {
       position: fixed;
       bottom: 20px;
