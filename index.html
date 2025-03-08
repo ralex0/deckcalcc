@@ -364,6 +364,9 @@
         if (probFirst >= 0.75) color = "green";
         else if (probFirst > 0.60) color = "orange";
         
+        const emojiFirst = probFirst >= 0.85 ? " 💪" : "";
+        const easterEggFirst = percentFirst === "69.00" ? " (Nice!)" : "";
+        
         if (goSecond) {
           const probSecond = calculateProbability(handSizeVal + 1);
           if (probSecond === null) {
@@ -373,11 +376,13 @@
             return;
           }
           const percentSecond = (probSecond * 100).toFixed(2);
-          resultDiv.textContent = `You have a ${percentFirst}% chance to open this hand going first, or ${percentSecond}% going second.`;
+          const emojiSecond = probSecond >= 0.85 ? " 💪" : "";
+          const easterEggSecond = percentSecond === "69.00" ? " (Nice!)" : "";
+          resultDiv.textContent = `You have a ${percentFirst}%${emojiFirst}${easterEggFirst} chance to open this hand going first, or ${percentSecond}%${emojiSecond}${easterEggSecond} going second.`;
           resultDiv.style.borderColor = color;
           resultDiv.style.color = color;
         } else {
-          resultDiv.textContent = `You have a ${percentFirst}% chance to open this hand.`;
+          resultDiv.textContent = `You have a ${percentFirst}%${emojiFirst}${easterEggFirst} chance to open this hand.`;
           resultDiv.style.borderColor = color;
           resultDiv.style.color = color;
         }
