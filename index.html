@@ -144,7 +144,6 @@
       cursor: pointer;
       transition: background 0.3s;
     }
-    /* Hover effect: lighten in dark mode, darken in light mode */
     body:not(.light-mode) #themeToggle:hover {
       background-color: rgba(255,255,255,0.2);
     }
@@ -318,17 +317,30 @@
         resultDiv.style.color = color;
       };
 
+      // Updated: Only clamp if the user enters a value higher than copies.
       const updateMinMax = rowDiv => {
         const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
         const minInput = rowDiv.querySelector(".min-hand");
         const maxInput = rowDiv.querySelector(".max-hand");
         let minVal = parseInt(minInput.value) || 0;
         let maxVal = parseInt(maxInput.value) || 0;
-        if (minVal > copies) { minVal = copies; minInput.value = copies; }
-        if (maxVal > copies) { maxVal = copies; maxInput.value = copies; }
-        if (minVal > maxVal) { maxVal = minVal; maxInput.value = maxVal; }
+        if (minVal > copies) {
+          minVal = copies;
+          minInput.value = copies;
+        }
+        if (maxVal > copies) {
+          maxVal = copies;
+          maxInput.value = copies;
+        }
+        if (minVal > maxVal) {
+          // Only update max if it's below the current min;
+          // don't force it to copies.
+          maxVal = minVal;
+          maxInput.value = maxVal;
+        }
+        // Only update the min input's maximum allowed value.
         minInput.max = copies;
-        maxInput.max = copies;
+        // Do not update maxInput.max so that user can set max as desired (up to copies).
       };
 
       const createEditableRow = () => {
