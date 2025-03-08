@@ -82,7 +82,7 @@
       background-color: #555;
       color: #fff;
     }
-    body:not(.light-mode) .row-buttons button:hover {
+    body:not(.light-mode) .row-buttons button:hover:enabled {
       background-color: #777;
     }
     /* Grayscale buttons for light mode */
@@ -90,7 +90,7 @@
       background-color: #ccc;
       color: #000;
     }
-    body.light-mode .row-buttons button:hover {
+    body.light-mode .row-buttons button:hover:enabled {
       background-color: #aaa;
     }
     .error { color: #ff6666; margin-bottom: 10px; }
@@ -216,6 +216,7 @@
         return group;
       };
 
+      // Create the read-only Unspecified row, including add and disabled remove buttons.
       const createUnspecifiedRow = () => {
         const rowsContainer = $.getElementById("rowsContainer");
         const rowDiv = $.createElement("div");
@@ -227,7 +228,23 @@
         const minGroup = createFieldGroup("Min in Hand:", 0, "min-hand small-input", "number", true);
         const maxGroup = createFieldGroup("Max in Hand:", 0, "max-hand small-input", "number", true);
 
-        rowDiv.append(nameGroup, copiesGroup, minGroup, maxGroup);
+        // Create buttons container with an active plus button and a disabled minus button.
+        const btnContainer = $.createElement("div");
+        btnContainer.className = "row-buttons";
+        const plusBtn = $.createElement("button");
+        plusBtn.textContent = "+";
+        plusBtn.title = "Add new card group after this row";
+        plusBtn.addEventListener("click", () => {
+          createEditableRowAfter(rowDiv);
+          updateResult();
+        });
+        const minusBtn = $.createElement("button");
+        minusBtn.textContent = "–";
+        minusBtn.title = "Cannot remove the Unspecified row";
+        minusBtn.disabled = true;
+        btnContainer.append(plusBtn, minusBtn);
+
+        rowDiv.append(nameGroup, copiesGroup, minGroup, maxGroup, btnContainer);
         rowsContainer.prepend(rowDiv);
       };
 
@@ -317,7 +334,7 @@
         resultDiv.style.color = color;
       };
 
-      // Updated: Only clamp if the user enters a value higher than copies.
+      // Updated: Only clamp if the entered value exceeds the number of copies.
       const updateMinMax = rowDiv => {
         const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
         const minInput = rowDiv.querySelector(".min-hand");
@@ -333,14 +350,12 @@
           maxInput.value = copies;
         }
         if (minVal > maxVal) {
-          // Only update max if it's below the current min;
-          // don't force it to copies.
+          // Only update max if user value is less than min.
           maxVal = minVal;
           maxInput.value = maxVal;
         }
-        // Only update the min input's maximum allowed value.
+        // Allow the max input's allowed value to remain user-set up to copies.
         minInput.max = copies;
-        // Do not update maxInput.max so that user can set max as desired (up to copies).
       };
 
       const createEditableRow = () => {
