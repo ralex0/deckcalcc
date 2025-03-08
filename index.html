@@ -24,12 +24,22 @@
     h1 { text-align: center; }
     .inputs {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 10px;
       margin-bottom: 15px;
-      align-items: center;
     }
-    .inputs label { flex: 1 0 100px; }
+    .row {
+      display: flex;
+      gap: 20px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .control-group label {
+      margin-bottom: 4px;
+    }
     input[type="number"],
     input[type="text"] {
       padding: 5px;
@@ -38,6 +48,15 @@
       background: #2e2e2e;
       color: #e0e0e0;
       transition: background 0.3s, color 0.3s, border-color 0.3s;
+    }
+    .sub-control {
+      font-size: 0.85em;
+      margin-top: 4px;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
     .card-row {
       display: flex;
@@ -166,10 +185,22 @@
       Enter your deck size, hand size, and details for each card group.
     </p>
     <div class="inputs">
-      <label for="deckSize">Deck Size:</label>
-      <input type="number" id="deckSize" value="40" min="1">
-      <label for="handSize">Hand Size:</label>
-      <input type="number" id="handSize" value="5" min="1">
+      <div class="row">
+        <div class="control-group">
+          <label for="deckSize">Deck Size:</label>
+          <input type="number" id="deckSize" value="40" min="1">
+        </div>
+        <div class="control-group">
+          <label for="handSize">Hand Size:</label>
+          <input type="number" id="handSize" value="5" min="1">
+          <div class="sub-control">
+            <label class="checkbox-label" for="goSecond">
+              <input type="checkbox" id="goSecond">
+              Show +1 for going second
+            </label>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="rowsContainer"></div>
     <div id="errorMessage" class="error"></div>
@@ -251,7 +282,7 @@
       const updateUnspecifiedRow = () => {
         const deckSize = parseInt($.getElementById("deckSize").value) || 0;
         const handSize = parseInt($.getElementById("handSize").value) || 0;
-        let totalSpecified = 0, totalEditableMin = 0, totalEditableMax = 0;
+        let totalEditableMin = 0, totalEditableMax = 0, totalSpecified = 0;
 
         $.querySelectorAll(".card-row.editable-row").forEach(row => {
           totalSpecified += parseInt(row.querySelector(".copies").value) || 0;
@@ -271,9 +302,10 @@
         }
       };
 
-      const calculateProbability = () => {
+      // Modified: Accept an optional handSizeOverride so we can calculate for handSize+1.
+      const calculateProbability = (handSizeOverride) => {
         const deckSize = parseInt($.getElementById("deckSize").value) || 0;
-        const handSize = parseInt($.getElementById("handSize").value) || 0;
+        const handSize = handSizeOverride !== undefined ? handSizeOverride : (parseInt($.getElementById("handSize").value) || 0);
         if (deckSize <= 0 || handSize <= 0 || handSize > deckSize) {
           $.getElementById("errorMessage").textContent = "Invalid deck or hand size.";
           return null;
@@ -315,23 +347,40 @@
       };
 
       const updateResult = () => {
-        const prob = calculateProbability();
+        const handSizeVal = parseInt($.getElementById("handSize").value) || 0;
+        const goSecond = $.getElementById("goSecond").checked;
         updateUnspecifiedRow();
         const resultDiv = $.getElementById("result");
-        if (prob === null) {
+        
+        const probFirst = calculateProbability(handSizeVal);
+        if (probFirst === null) {
           resultDiv.textContent = "Probability undefined";
           resultDiv.style.borderColor = "#555";
           resultDiv.style.color = "#e0e0e0";
           return;
         }
-        const percent = (prob * 100).toFixed(2);
+        const percentFirst = (probFirst * 100).toFixed(2);
         let color = "red";
-        if (prob >= 0.75) color = "green";
-        else if (prob > 0.60) color = "orange";
-        const emoji = prob >= 0.85 ? " 💪" : "";
-        resultDiv.textContent = `You have a ${percent}%${emoji} chance to open this hand.`;
-        resultDiv.style.borderColor = color;
-        resultDiv.style.color = color;
+        if (probFirst >= 0.75) color = "green";
+        else if (probFirst > 0.60) color = "orange";
+        
+        if (goSecond) {
+          const probSecond = calculateProbability(handSizeVal + 1);
+          if (probSecond === null) {
+            resultDiv.textContent = "Probability undefined";
+            resultDiv.style.borderColor = "#555";
+            resultDiv.style.color = "#e0e0e0";
+            return;
+          }
+          const percentSecond = (probSecond * 100).toFixed(2);
+          resultDiv.textContent = `You have a ${percentFirst}% chance to open this hand going first, or ${percentSecond}% going second.`;
+          resultDiv.style.borderColor = color;
+          resultDiv.style.color = color;
+        } else {
+          resultDiv.textContent = `You have a ${percentFirst}% chance to open this hand.`;
+          resultDiv.style.borderColor = color;
+          resultDiv.style.color = color;
+        }
       };
 
       // Updated: Only clamp if the entered value exceeds the number of copies.
@@ -350,11 +399,9 @@
           maxInput.value = copies;
         }
         if (minVal > maxVal) {
-          // Only update max if user value is less than min.
           maxVal = minVal;
           maxInput.value = maxVal;
         }
-        // Allow the max input's allowed value to remain user-set up to copies.
         minInput.max = copies;
       };
 
@@ -431,6 +478,7 @@
 
       $.getElementById("deckSize").addEventListener("input", updateResult);
       $.getElementById("handSize").addEventListener("input", updateResult);
+      $.getElementById("goSecond").addEventListener("change", updateResult);
 
       $.addEventListener("DOMContentLoaded", () => {
         initTheme();
