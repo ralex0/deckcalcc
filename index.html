@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Yu-Gi-Oh Deck Probability Calculator</title>
   <style>
-    /* Base styles */
+    /* Main styling for container, inputs, and dark/light mode */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
@@ -37,9 +37,7 @@
       flex-direction: column;
       flex: 1;
     }
-    .control-group label {
-      margin-bottom: 4px;
-    }
+    .control-group label { margin-bottom: 4px; }
     input[type="number"],
     input[type="text"] {
       padding: 5px;
@@ -96,7 +94,7 @@
       cursor: pointer;
       transition: background 0.3s;
     }
-    /* Grayscale buttons for dark mode */
+    /* Button styles for dark mode */
     body:not(.light-mode) .row-buttons button {
       background-color: #555;
       color: #fff;
@@ -104,7 +102,7 @@
     body:not(.light-mode) .row-buttons button:hover:enabled {
       background-color: #777;
     }
-    /* Grayscale buttons for light mode */
+    /* Button styles for light mode */
     body.light-mode .row-buttons button {
       background-color: #ccc;
       color: #000;
@@ -145,7 +143,7 @@
       background-color: #f0f0f0;
       opacity: 1;
     }
-    /* Fixed containers for controls */
+    /* Fixed control containers */
     #themeContainer {
       position: fixed;
       bottom: 20px;
@@ -195,8 +193,7 @@
           <input type="number" id="handSize" value="5" min="1">
           <div class="sub-control">
             <label class="checkbox-label" for="goSecond">
-              <input type="checkbox" id="goSecond">
-              Show +1 for going second
+              <input type="checkbox" id="goSecond"> Show +1 for going second
             </label>
           </div>
         </div>
@@ -223,6 +220,7 @@
       let rowCounter = 0;
       const $ = document;
 
+      // Return the binomial coefficient "n choose k"
       const binom = (n, k) => {
         if (k < 0 || k > n) return 0;
         if (k === 0 || k === n) return 1;
@@ -233,6 +231,15 @@
         return result;
       };
 
+      /**
+       * Creates a labeled input field.
+       * @param {string} labelText - The text for the label.
+       * @param {string|number} initialValue - The initial value of the input.
+       * @param {string} inputClass - The CSS class for the input.
+       * @param {string} [type="number"] - The input type.
+       * @param {boolean} [readOnly=false] - Whether the input is read-only.
+       * @returns {HTMLElement} The constructed field group.
+       */
       const createFieldGroup = (labelText, initialValue, inputClass, type = "number", readOnly = false) => {
         const group = $.createElement("div");
         group.className = "field-group";
@@ -247,7 +254,9 @@
         return group;
       };
 
-      // Create the read-only Unspecified row.
+      /**
+       * Creates the read-only "Unspecified" row.
+       */
       const createUnspecifiedRow = () => {
         const rowsContainer = $.getElementById("rowsContainer");
         const rowDiv = $.createElement("div");
@@ -278,6 +287,9 @@
         rowsContainer.prepend(rowDiv);
       };
 
+      /**
+       * Updates the values of the "Unspecified" row based on current deck/hand sizes and card rows.
+       */
       const updateUnspecifiedRow = () => {
         const deckSize = parseInt($.getElementById("deckSize").value) || 0;
         const handSize = parseInt($.getElementById("handSize").value) || 0;
@@ -301,7 +313,12 @@
         }
       };
 
-      // Modified: Accept an optional handSizeOverride so we can calculate for handSize+1.
+      /**
+       * Calculates the probability of drawing a hand meeting the constraints.
+       * Uses a recursive helper function for hypergeometric probability.
+       * @param {number} [handSizeOverride] - Optional override for hand size.
+       * @returns {number|null} The probability (0-1) or null if inputs are invalid.
+       */
       const calculateProbability = (handSizeOverride) => {
         const deckSize = parseInt($.getElementById("deckSize").value) || 0;
         const handSize = handSizeOverride !== undefined ? handSizeOverride : (parseInt($.getElementById("handSize").value) || 0);
@@ -345,6 +362,11 @@
         return rec(0, 0, 1) / totalWays;
       };
 
+      /**
+       * Updates the result display with the calculated probabilities.
+       * Formats the result with fun emojis (💪 for ≥85% and (Nice!) for exactly 69%),
+       * and adds a centered skull emoji line if any card names include "skull servant" or "wight".
+       */
       const updateResult = () => {
         const handSizeVal = parseInt($.getElementById("handSize").value) || 0;
         const goSecond = $.getElementById("goSecond").checked;
@@ -383,7 +405,7 @@
           resultText = `You have a ${percentFirst}%${emojiFirst}${easterEggFirst} chance to open this hand.`;
         }
         
-        // Check for extra Easter egg: for each editable row whose name includes "skull servant" or "wight"
+        // Append extra skull emoji line if any editable row's name includes "skull servant" or "wight"
         let extraSkulls = "";
         $.querySelectorAll(".card-row.editable-row").forEach(row => {
           const name = row.querySelector(".card-name").value.toLowerCase();
@@ -400,7 +422,10 @@
         resultDiv.style.color = color;
       };
 
-      // Updated updateMinMax: now only sets the allowed max via attributes.
+      /**
+       * Updates the allowed maximum values for the min and max input fields.
+       * Only adjusts the minimum value if it exceeds the number of copies.
+       */
       const updateMinMax = rowDiv => {
         const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
         const minInput = rowDiv.querySelector(".min-hand");
@@ -414,19 +439,23 @@
         }
       };
 
-      // Function for creating a new editable row (for plus button)
+      /**
+       * Creates a new editable row with default values.
+       * Default card name is "Handtraps, Starters, etc" (1% chance to be "Skull Servant"),
+       * copies: 3, min in hand: 1, max in hand: 3.
+       * @returns {HTMLElement} The new editable row.
+       */
       const createEditableRow = () => {
         rowCounter++;
         const rowDiv = $.createElement("div");
         rowDiv.className = "card-row editable-row";
         
-        // Default name: 1% chance to be "Skull Servant", else "Handtraps, Starters, etc"
+        // 1% chance for default name to be "Skull Servant"
         let defaultName = "Handtraps, Starters, etc";
         if (Math.random() < 0.01) {
           defaultName = "Skull Servant";
         }
         
-        // Defaults: copies 3, min 1, max 3.
         const nameGroup = createFieldGroup("Card Name:", defaultName, "card-name", "text");
         const copiesGroup = createFieldGroup("Copies in Deck:", 3, "copies small-input", "number");
         const minGroup = createFieldGroup("Min in Hand:", 1, "min-hand small-input", "number");
@@ -461,11 +490,14 @@
         return rowDiv;
       };
 
-      // Function for creating the initial row with specific defaults.
+      /**
+       * Creates the initial editable row with special defaults.
+       * Defaults: card name "Gem-Knight Garnet", copies: 1, min in hand: 0, max in hand: 0.
+       * @returns {HTMLElement} The initial row.
+       */
       const createInitialRow = () => {
         const rowDiv = $.createElement("div");
         rowDiv.className = "card-row editable-row";
-        // Defaults for the initial row:
         const nameGroup = createFieldGroup("Card Name:", "Gem-Knight Garnet", "card-name", "text");
         const copiesGroup = createFieldGroup("Copies in Deck:", 1, "copies small-input", "number");
         const minGroup = createFieldGroup("Min in Hand:", 0, "min-hand small-input", "number");
@@ -500,6 +532,11 @@
         return rowDiv;
       };
 
+      /**
+       * Inserts a new editable row immediately after the given row.
+       * @param {HTMLElement} afterRow - The row after which the new row is inserted.
+       * @returns {HTMLElement} The new editable row.
+       */
       const createEditableRowAfter = afterRow => {
         const newRow = createEditableRow();
         afterRow.parentNode.insertBefore(newRow, afterRow.nextSibling);
@@ -507,7 +544,7 @@
         return newRow;
       };
 
-      // Theme toggle logic
+      /* Theme toggle functions for light/dark mode */
       const themeToggleBtn = $.getElementById("themeToggle");
       const applyTheme = theme => {
         if (theme === "light") {
@@ -530,14 +567,15 @@
         applyTheme(saved);
       };
 
+      /* Event listeners for input updates */
       $.getElementById("deckSize").addEventListener("input", updateResult);
       $.getElementById("handSize").addEventListener("input", updateResult);
       $.getElementById("goSecond").addEventListener("change", updateResult);
 
+      /* Initialize page: set theme, create unspecified row and initial row */
       $.addEventListener("DOMContentLoaded", () => {
         initTheme();
         createUnspecifiedRow();
-        // Create the initial row with the special defaults.
         const initialRow = createInitialRow();
         $.getElementById("rowsContainer").append(initialRow);
         updateResult();
