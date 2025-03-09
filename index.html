@@ -259,7 +259,6 @@
         const minGroup = createFieldGroup("Min in Hand:", 0, "min-hand small-input", "number", true);
         const maxGroup = createFieldGroup("Max in Hand:", 0, "max-hand small-input", "number", true);
 
-        // Create buttons container with an active plus button and a disabled minus button.
         const btnContainer = $.createElement("div");
         btnContainer.className = "row-buttons";
         const plusBtn = $.createElement("button");
@@ -367,6 +366,7 @@
         const emojiFirst = probFirst >= 0.85 ? " 💪" : "";
         const easterEggFirst = percentFirst === "69.00" ? " (Nice!)" : "";
         
+        let resultText = "";
         if (goSecond) {
           const probSecond = calculateProbability(handSizeVal + 1);
           if (probSecond === null) {
@@ -378,42 +378,96 @@
           const percentSecond = (probSecond * 100).toFixed(2);
           const emojiSecond = probSecond >= 0.85 ? " 💪" : "";
           const easterEggSecond = percentSecond === "69.00" ? " (Nice!)" : "";
-          resultDiv.textContent = `You have a ${percentFirst}%${emojiFirst}${easterEggFirst} chance to open this hand going first, or ${percentSecond}%${emojiSecond}${easterEggSecond} going second.`;
-          resultDiv.style.borderColor = color;
-          resultDiv.style.color = color;
+          resultText = `You have a ${percentFirst}%${emojiFirst}${easterEggFirst} chance to open this hand going first, or ${percentSecond}%${emojiSecond}${easterEggSecond} going second.`;
         } else {
-          resultDiv.textContent = `You have a ${percentFirst}%${emojiFirst}${easterEggFirst} chance to open this hand.`;
-          resultDiv.style.borderColor = color;
-          resultDiv.style.color = color;
+          resultText = `You have a ${percentFirst}%${emojiFirst}${easterEggFirst} chance to open this hand.`;
         }
+        
+        // Check for extra Easter egg: for each editable row whose name includes "skull servant" or "wight"
+        let extraSkulls = "";
+        $.querySelectorAll(".card-row.editable-row").forEach(row => {
+          const name = row.querySelector(".card-name").value.toLowerCase();
+          if (name.includes("skull servant") || name.includes("wight")) {
+            extraSkulls += "💀";
+          }
+        });
+        if (extraSkulls) {
+          resultText += `<br/><div style="text-align: center;">${extraSkulls}</div>`;
+        }
+        
+        resultDiv.innerHTML = resultText;
+        resultDiv.style.borderColor = color;
+        resultDiv.style.color = color;
       };
 
-      // Updated updateMinMax: now only auto-adjusts the minimum if needed,
-      // and sets the maximum allowed value for both min and max inputs,
-      // without overriding the user's entered max value.
+      // Updated updateMinMax: now only sets the allowed max via attributes.
       const updateMinMax = rowDiv => {
         const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
         const minInput = rowDiv.querySelector(".min-hand");
         const maxInput = rowDiv.querySelector(".max-hand");
         let minVal = parseInt(minInput.value) || 0;
-        // Do not forcefully change the max value; just set its allowed limit.
         minInput.setAttribute("max", copies);
         maxInput.setAttribute("max", copies);
         if (minVal > copies) {
           minVal = copies;
           minInput.value = copies;
         }
-        // Do not auto-adjust maxInput.value even if it's higher than copies,
-        // so the user can set it freely (HTML validation may prevent values above copies).
       };
 
+      // Function for creating a new editable row (for plus button)
       const createEditableRow = () => {
         rowCounter++;
         const rowDiv = $.createElement("div");
         rowDiv.className = "card-row editable-row";
-
-        const nameGroup = createFieldGroup("Card Name:", "handtrap, starter, etc.", "card-name", "text");
+        
+        // Default name: 1% chance to be "Skull Servant", else "Handtraps, Starters, etc"
+        let defaultName = "Handtraps, Starters, etc";
+        if (Math.random() < 0.01) {
+          defaultName = "Skull Servant";
+        }
+        
+        // Defaults: copies 3, min 1, max 3.
+        const nameGroup = createFieldGroup("Card Name:", defaultName, "card-name", "text");
         const copiesGroup = createFieldGroup("Copies in Deck:", 3, "copies small-input", "number");
+        const minGroup = createFieldGroup("Min in Hand:", 1, "min-hand small-input", "number");
+        const maxGroup = createFieldGroup("Max in Hand:", 3, "max-hand small-input", "number");
+
+        const btnContainer = $.createElement("div");
+        btnContainer.className = "row-buttons";
+        const plusBtn = $.createElement("button");
+        plusBtn.textContent = "+";
+        plusBtn.title = "Add new card group after this row";
+        plusBtn.addEventListener("click", () => {
+          createEditableRowAfter(rowDiv);
+          updateResult();
+        });
+        const minusBtn = $.createElement("button");
+        minusBtn.textContent = "–";
+        minusBtn.title = "Remove this card group";
+        minusBtn.addEventListener("click", () => {
+          rowDiv.remove();
+          updateResult();
+        });
+        btnContainer.append(plusBtn, minusBtn);
+
+        rowDiv.append(nameGroup, copiesGroup, minGroup, maxGroup, btnContainer);
+
+        ["copies", "min-hand", "max-hand", "card-name"].forEach(cls => {
+          rowDiv.querySelector("." + cls).addEventListener("input", () => {
+            updateMinMax(rowDiv);
+            updateResult();
+          });
+        });
+        return rowDiv;
+      };
+
+      // Function for creating the initial row with specific defaults.
+      const createInitialRow = () => {
+        const rowDiv = $.createElement("div");
+        rowDiv.className = "card-row editable-row";
+        // Defaults for the initial row:
+        const nameGroup = createFieldGroup("Card Name:", "Gem-Knight Garnet", "card-name", "text");
+        const copiesGroup = createFieldGroup("Copies in Deck:", 1, "copies small-input", "number");
         const minGroup = createFieldGroup("Min in Hand:", 0, "min-hand small-input", "number");
         const maxGroup = createFieldGroup("Max in Hand:", 0, "max-hand small-input", "number");
 
@@ -437,14 +491,12 @@
 
         rowDiv.append(nameGroup, copiesGroup, minGroup, maxGroup, btnContainer);
 
-        ["copies", "min-hand", "max-hand"].forEach(cls => {
+        ["copies", "min-hand", "max-hand", "card-name"].forEach(cls => {
           rowDiv.querySelector("." + cls).addEventListener("input", () => {
             updateMinMax(rowDiv);
             updateResult();
           });
         });
-        rowDiv.querySelector(".card-name").addEventListener("input", updateResult);
-
         return rowDiv;
       };
 
@@ -485,7 +537,8 @@
       $.addEventListener("DOMContentLoaded", () => {
         initTheme();
         createUnspecifiedRow();
-        const initialRow = createEditableRow();
+        // Create the initial row with the special defaults.
+        const initialRow = createInitialRow();
         $.getElementById("rowsContainer").append(initialRow);
         updateResult();
       });
