@@ -247,7 +247,7 @@
         return group;
       };
 
-      // Create the read-only Unspecified row, including add and disabled remove buttons.
+      // Create the read-only Unspecified row.
       const createUnspecifiedRow = () => {
         const rowsContainer = $.getElementById("rowsContainer");
         const rowDiv = $.createElement("div");
@@ -388,26 +388,23 @@
         }
       };
 
-      // Updated: Only clamp if the entered value exceeds the number of copies.
+      // Updated updateMinMax: now only auto-adjusts the minimum if needed,
+      // and sets the maximum allowed value for both min and max inputs,
+      // without overriding the user's entered max value.
       const updateMinMax = rowDiv => {
         const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
         const minInput = rowDiv.querySelector(".min-hand");
         const maxInput = rowDiv.querySelector(".max-hand");
         let minVal = parseInt(minInput.value) || 0;
-        let maxVal = parseInt(maxInput.value) || 0;
+        // Do not forcefully change the max value; just set its allowed limit.
+        minInput.setAttribute("max", copies);
+        maxInput.setAttribute("max", copies);
         if (minVal > copies) {
           minVal = copies;
           minInput.value = copies;
         }
-        if (maxVal > copies) {
-          maxVal = copies;
-          maxInput.value = copies;
-        }
-        if (minVal > maxVal) {
-          maxVal = minVal;
-          maxInput.value = maxVal;
-        }
-        minInput.max = copies;
+        // Do not auto-adjust maxInput.value even if it's higher than copies,
+        // so the user can set it freely (HTML validation may prevent values above copies).
       };
 
       const createEditableRow = () => {
