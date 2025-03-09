@@ -94,7 +94,7 @@
       cursor: pointer;
       transition: background 0.3s;
     }
-    /* Button styles for dark mode */
+    /* Dark mode button styles */
     body:not(.light-mode) .row-buttons button {
       background-color: #555;
       color: #fff;
@@ -102,7 +102,7 @@
     body:not(.light-mode) .row-buttons button:hover:enabled {
       background-color: #777;
     }
-    /* Button styles for light mode */
+    /* Light mode button styles */
     body.light-mode .row-buttons button {
       background-color: #ccc;
       color: #000;
@@ -220,7 +220,9 @@
       let rowCounter = 0;
       const $ = document;
 
-      // Return the binomial coefficient "n choose k"
+      // -----------------------------
+      // Core Probability Calculation
+      // -----------------------------
       const binom = (n, k) => {
         if (k < 0 || k > n) return 0;
         if (k === 0 || k === n) return 1;
@@ -233,12 +235,6 @@
 
       /**
        * Creates a labeled input field.
-       * @param {string} labelText - The text for the label.
-       * @param {string|number} initialValue - The initial value of the input.
-       * @param {string} inputClass - The CSS class for the input.
-       * @param {string} [type="number"] - The input type.
-       * @param {boolean} [readOnly=false] - Whether the input is read-only.
-       * @returns {HTMLElement} The constructed field group.
        */
       const createFieldGroup = (labelText, initialValue, inputClass, type = "number", readOnly = false) => {
         const group = $.createElement("div");
@@ -254,9 +250,61 @@
         return group;
       };
 
+      // -----------------------------
+      // Easter Egg Functions (Modular)
+      // -----------------------------
       /**
-       * Creates the read-only "Unspecified" row.
+       * Applies probability-based Easter eggs.
+       * Returns extra text based on the probability.
+       * (💪 for ≥85%, and “(Nice!)” for exactly 69%)
+       * @param {number} prob - The probability (0-1).
+       * @returns {string} Extra text.
        */
+      const getProbabilityEasterEggs = (prob) => {
+        let extra = "";
+        const percentStr = (prob * 100).toFixed(2);
+        if (prob >= 0.85) extra += " 💪";
+        if (percentStr === "69.00") extra += " (Nice!)";
+        return extra;
+      };
+
+      /**
+       * Checks all editable rows for card names that include "skull servant" or "wight"
+       * (case-insensitive) and returns a centered line of skull emojis.
+       * @returns {string} HTML string with skull emojis, or an empty string.
+       */
+      const getGlobalEasterEggs = () => {
+        let skulls = "";
+        $.querySelectorAll(".card-row.editable-row").forEach(row => {
+          const name = row.querySelector(".card-name").value.toLowerCase();
+          if (name.includes("skull servant") || name.includes("wight")) {
+            skulls += "💀";
+          }
+        });
+        return skulls ? `<br/><div style="text-align: center;">${skulls}</div>` : "";
+      };
+
+      /**
+       * Returns the combined Easter egg modifications.
+       * This function calls both the probability-based and global Easter egg functions.
+       * @param {number|null} prob - The probability (0-1) for which to add eggs, or null if not applicable.
+       * @param {boolean} addGlobal - Whether to include global (row-based) Easter eggs.
+       * @returns {string} Combined Easter egg string.
+       */
+      const getEasterEggs = (prob, addGlobal) => {
+        let eggs = "";
+        if (prob !== null && prob !== undefined) {
+          eggs += getProbabilityEasterEggs(prob);
+        }
+        if (addGlobal) {
+          eggs += getGlobalEasterEggs();
+        }
+        return eggs;
+      };
+
+      // -----------------------------
+      // Row Creation & Update Functions
+      // -----------------------------
       const createUnspecifiedRow = () => {
         const rowsContainer = $.getElementById("rowsContainer");
         const rowDiv = $.createElement("div");
@@ -287,24 +335,18 @@
         rowsContainer.prepend(rowDiv);
       };
 
-      /**
-       * Updates the values of the "Unspecified" row based on current deck/hand sizes and card rows.
-       */
       const updateUnspecifiedRow = () => {
         const deckSize = parseInt($.getElementById("deckSize").value) || 0;
         const handSize = parseInt($.getElementById("handSize").value) || 0;
         let totalEditableMin = 0, totalEditableMax = 0, totalSpecified = 0;
-
         $.querySelectorAll(".card-row.editable-row").forEach(row => {
           totalSpecified += parseInt(row.querySelector(".copies").value) || 0;
           totalEditableMin += parseInt(row.querySelector(".min-hand").value) || 0;
           totalEditableMax += parseInt(row.querySelector(".max-hand").value) || 0;
         });
-
         const R = deckSize - totalSpecified;
         const unspecifiedMin = Math.max(0, handSize - totalEditableMax);
         const unspecifiedMax = Math.min(R, handSize - totalEditableMin);
-
         const unspecifiedRow = $.getElementById("unspecifiedRow");
         if (unspecifiedRow) {
           unspecifiedRow.querySelector(".unspecified-copies").value = R;
@@ -314,20 +356,19 @@
       };
 
       /**
-       * Calculates the probability of drawing a hand meeting the constraints.
-       * Uses a recursive helper function for hypergeometric probability.
+       * Calculates the hypergeometric probability of drawing a hand meeting the constraints.
        * @param {number} [handSizeOverride] - Optional override for hand size.
        * @returns {number|null} The probability (0-1) or null if inputs are invalid.
        */
       const calculateProbability = (handSizeOverride) => {
         const deckSize = parseInt($.getElementById("deckSize").value) || 0;
-        const handSize = handSizeOverride !== undefined ? handSizeOverride : (parseInt($.getElementById("handSize").value) || 0);
+        const handSize = handSizeOverride !== undefined ?
+                         handSizeOverride : (parseInt($.getElementById("handSize").value) || 0);
         if (deckSize <= 0 || handSize <= 0 || handSize > deckSize) {
           $.getElementById("errorMessage").textContent = "Invalid deck or hand size.";
           return null;
         }
         $.getElementById("errorMessage").textContent = "";
-
         const rows = [];
         let totalCopiesSpecified = 0;
         $.querySelectorAll(".card-row.editable-row").forEach(row => {
@@ -341,10 +382,8 @@
           $.getElementById("errorMessage").textContent = "Total copies specified exceed deck size.";
           return null;
         }
-
         const R = deckSize - totalCopiesSpecified;
         const totalWays = binom(deckSize, handSize);
-
         const rec = (index, currentSum, prod) => {
           if (index === rows.length) {
             const r = handSize - currentSum;
@@ -358,21 +397,18 @@
           }
           return sumRow;
         };
-
         return rec(0, 0, 1) / totalWays;
       };
 
       /**
-       * Updates the result display with the calculated probabilities.
-       * Formats the result with fun emojis (💪 for ≥85% and (Nice!) for exactly 69%),
-       * and adds a centered skull emoji line if any card names include "skull servant" or "wight".
+       * Updates the result display with the calculated probability and appends Easter eggs.
        */
       const updateResult = () => {
         const handSizeVal = parseInt($.getElementById("handSize").value) || 0;
         const goSecond = $.getElementById("goSecond").checked;
         updateUnspecifiedRow();
         const resultDiv = $.getElementById("result");
-        
+
         const probFirst = calculateProbability(handSizeVal);
         if (probFirst === null) {
           resultDiv.textContent = "Probability undefined";
@@ -384,10 +420,7 @@
         let color = "red";
         if (probFirst >= 0.75) color = "green";
         else if (probFirst > 0.60) color = "orange";
-        
-        const emojiFirst = probFirst >= 0.85 ? " 💪" : "";
-        const easterEggFirst = percentFirst === "69.00" ? " (Nice!)" : "";
-        
+
         let resultText = "";
         if (goSecond) {
           const probSecond = calculateProbability(handSizeVal + 1);
@@ -398,33 +431,19 @@
             return;
           }
           const percentSecond = (probSecond * 100).toFixed(2);
-          const emojiSecond = probSecond >= 0.85 ? " 💪" : "";
-          const easterEggSecond = percentSecond === "69.00" ? " (Nice!)" : "";
-          resultText = `You have a ${percentFirst}%${emojiFirst}${easterEggFirst} chance to open this hand going first, or ${percentSecond}%${emojiSecond}${easterEggSecond} going second.`;
+          resultText = `You have a ${percentFirst}%${getEasterEggs(probFirst, false)} chance to open this hand going first, or ${percentSecond}%${getEasterEggs(probSecond, false)} going second.`;
         } else {
-          resultText = `You have a ${percentFirst}%${emojiFirst}${easterEggFirst} chance to open this hand.`;
+          resultText = `You have a ${percentFirst}%${getEasterEggs(probFirst, false)} chance to open this hand.`;
         }
-        
-        // Append extra skull emoji line if any editable row's name includes "skull servant" or "wight"
-        let extraSkulls = "";
-        $.querySelectorAll(".card-row.editable-row").forEach(row => {
-          const name = row.querySelector(".card-name").value.toLowerCase();
-          if (name.includes("skull servant") || name.includes("wight")) {
-            extraSkulls += "💀";
-          }
-        });
-        if (extraSkulls) {
-          resultText += `<br/><div style="text-align: center;">${extraSkulls}</div>`;
-        }
-        
+        // Append global Easter eggs (e.g. skull emojis) once
+        resultText += getEasterEggs(null, true);
         resultDiv.innerHTML = resultText;
         resultDiv.style.borderColor = color;
         resultDiv.style.color = color;
       };
 
       /**
-       * Updates the allowed maximum values for the min and max input fields.
-       * Only adjusts the minimum value if it exceeds the number of copies.
+       * Sets allowed maximums for the "min" and "max" inputs based on the number of copies.
        */
       const updateMinMax = rowDiv => {
         const copies = parseInt(rowDiv.querySelector(".copies").value) || 0;
@@ -441,21 +460,19 @@
 
       /**
        * Creates a new editable row with default values.
-       * Default card name is "Handtraps, Starters, etc" (1% chance to be "Skull Servant"),
-       * copies: 3, min in hand: 1, max in hand: 3.
+       *  - Default name is "Handtraps, Starters, etc" with a 1% chance to be "Skull Servant".
+       *  - Copies: 3, Min in Hand: 1, Max in Hand: 3.
        * @returns {HTMLElement} The new editable row.
        */
       const createEditableRow = () => {
         rowCounter++;
         const rowDiv = $.createElement("div");
         rowDiv.className = "card-row editable-row";
-        
-        // 1% chance for default name to be "Skull Servant"
+
         let defaultName = "Handtraps, Starters, etc";
         if (Math.random() < 0.01) {
           defaultName = "Skull Servant";
         }
-        
         const nameGroup = createFieldGroup("Card Name:", defaultName, "card-name", "text");
         const copiesGroup = createFieldGroup("Copies in Deck:", 3, "copies small-input", "number");
         const minGroup = createFieldGroup("Min in Hand:", 1, "min-hand small-input", "number");
@@ -480,7 +497,6 @@
         btnContainer.append(plusBtn, minusBtn);
 
         rowDiv.append(nameGroup, copiesGroup, minGroup, maxGroup, btnContainer);
-
         ["copies", "min-hand", "max-hand", "card-name"].forEach(cls => {
           rowDiv.querySelector("." + cls).addEventListener("input", () => {
             updateMinMax(rowDiv);
@@ -491,9 +507,9 @@
       };
 
       /**
-       * Creates the initial editable row with special defaults.
-       * Defaults: card name "Gem-Knight Garnet", copies: 1, min in hand: 0, max in hand: 0.
-       * @returns {HTMLElement} The initial row.
+       * Creates the initial row with special defaults:
+       * "Gem-Knight Garnet", Copies: 1, Min in Hand: 0, Max in Hand: 0.
+       * @returns {HTMLElement} The initial editable row.
        */
       const createInitialRow = () => {
         const rowDiv = $.createElement("div");
@@ -522,7 +538,6 @@
         btnContainer.append(plusBtn, minusBtn);
 
         rowDiv.append(nameGroup, copiesGroup, minGroup, maxGroup, btnContainer);
-
         ["copies", "min-hand", "max-hand", "card-name"].forEach(cls => {
           rowDiv.querySelector("." + cls).addEventListener("input", () => {
             updateMinMax(rowDiv);
@@ -533,7 +548,7 @@
       };
 
       /**
-       * Inserts a new editable row immediately after the given row.
+       * Inserts a new editable row immediately after a given row.
        * @param {HTMLElement} afterRow - The row after which the new row is inserted.
        * @returns {HTMLElement} The new editable row.
        */
@@ -544,7 +559,9 @@
         return newRow;
       };
 
-      /* Theme toggle functions for light/dark mode */
+      // -----------------------------
+      // Theme Toggle Functions
+      // -----------------------------
       const themeToggleBtn = $.getElementById("themeToggle");
       const applyTheme = theme => {
         if (theme === "light") {
@@ -567,12 +584,13 @@
         applyTheme(saved);
       };
 
-      /* Event listeners for input updates */
+      // -----------------------------
+      // Event Listeners and Initialization
+      // -----------------------------
       $.getElementById("deckSize").addEventListener("input", updateResult);
       $.getElementById("handSize").addEventListener("input", updateResult);
       $.getElementById("goSecond").addEventListener("change", updateResult);
 
-      /* Initialize page: set theme, create unspecified row and initial row */
       $.addEventListener("DOMContentLoaded", () => {
         initTheme();
         createUnspecifiedRow();
