@@ -193,8 +193,12 @@
       flex-wrap: wrap;
       margin-bottom: 5px;
     }
+    /* New wrapper for each hand card and its toggle */
+    .hand-card-wrapper {
+      display: flex;
+      align-items: center;
+    }
     .hand-card {
-      flex: 1;
       padding: 4px;
       border: 1px solid #555;
       border-radius: 4px;
@@ -203,6 +207,17 @@
       -webkit-appearance: menulist-button;
       -moz-appearance: menulist-button;
       appearance: menulist-button;
+    }
+    /* 🛇 Toggle Button */
+    .hand-toggle {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2em;
+      margin-left: 5px;
+    }
+    .hand-toggle.active {
+      color: red;
     }
     .hand-controls {
       display: flex;
@@ -544,6 +559,10 @@
       row.className = 'hand-row';
       const handSize = parseInt(document.getElementById('handSizeInput').value) || 5;
       for (let i = 0; i < handSize; i++) {
+        // Create a wrapper to hold the select and the toggle
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'hand-card-wrapper';
+        
         const handCard = document.createElement('select');
         handCard.className = 'hand-card';
         const defaultOption = document.createElement('option');
@@ -561,7 +580,21 @@
         handCard.addEventListener('blur', () => {
           validateHandCardInput(handCard);
         });
-        row.appendChild(handCard);
+        
+        // Create the toggle button
+        const toggleButton = document.createElement('button');
+        toggleButton.className = 'hand-toggle';
+        toggleButton.textContent = '🛇';
+        toggleButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          toggleButton.classList.toggle('active');
+          // Mark the select with a data attribute indicating exclusion
+          handCard.dataset.exclude = toggleButton.classList.contains('active');
+        });
+        
+        cardWrapper.appendChild(handCard);
+        cardWrapper.appendChild(toggleButton);
+        row.appendChild(cardWrapper);
       }
       
       const controlContainer = document.createElement('div');
@@ -614,9 +647,13 @@
       const handContainer = document.getElementById('handContainer');
       handContainer.querySelectorAll('.hand-box').forEach(box => {
         const row = box.querySelector('.hand-row');
-        const currentCount = row.querySelectorAll('select.hand-card').length;
+        const currentCount = row.querySelectorAll('.hand-card').length;
         if (currentCount < handSize) {
           for (let i = currentCount; i < handSize; i++) {
+            // Create new card wrapper with select and toggle
+            const cardWrapper = document.createElement('div');
+            cardWrapper.className = 'hand-card-wrapper';
+            
             const handCard = document.createElement('select');
             handCard.className = 'hand-card';
             const defaultOption = document.createElement('option');
@@ -634,12 +671,24 @@
             handCard.addEventListener('blur', () => {
               validateHandCardInput(handCard);
             });
-            row.appendChild(handCard);
+            
+            const toggleButton = document.createElement('button');
+            toggleButton.className = 'hand-toggle';
+            toggleButton.textContent = '🛇';
+            toggleButton.addEventListener('click', (e) => {
+              e.preventDefault();
+              toggleButton.classList.toggle('active');
+              handCard.dataset.exclude = toggleButton.classList.contains('active');
+            });
+            
+            cardWrapper.appendChild(handCard);
+            cardWrapper.appendChild(toggleButton);
+            row.appendChild(cardWrapper);
           }
         } else if (currentCount > handSize) {
           for (let i = currentCount; i > handSize; i--) {
-            const selects = row.querySelectorAll('select.hand-card');
-            selects[selects.length - 1].remove();
+            const cardWrappers = row.querySelectorAll('.hand-card-wrapper');
+            cardWrappers[cardWrappers.length - 1].remove();
           }
         }
       });
