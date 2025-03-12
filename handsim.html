@@ -165,6 +165,76 @@
       margin-top: 0;
       text-align: center;
     }
+    /* Light mode overrides */
+    body.light-mode {
+      background-color: #f7f7f7;
+      color: #000;
+    }
+    body.light-mode .container {
+      background: #fff;
+      color: #000;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    body.light-mode .left-pane, 
+    body.light-mode .right-pane {
+      background: #f0f0f0;
+      color: #000;
+    }
+    body.light-mode input[type="number"],
+    body.light-mode input[type="text"] {
+      background: #fff;
+      color: #000;
+      border-color: #ccc;
+    }
+    body.light-mode .decklist-buttons button,
+    body.light-mode .hand-controls button {
+      background-color: #ccc;
+      color: #000;
+    }
+    body.light-mode .decklist-buttons button:hover,
+    body.light-mode .hand-controls button:hover {
+      background-color: #aaa;
+    }
+    body.light-mode .hand-card {
+      background: #fff;
+      color: #000;
+      border-color: #ccc;
+    }
+    body.light-mode .hand-size-control input {
+      background: #fff;
+      color: #000;
+      border-color: #ccc;
+    }
+    /* Fixed containers for theme toggle and donate button */
+    #themeContainer {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1001;
+    }
+    #themeToggle {
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 50%;
+      background-color: transparent;
+      color: inherit;
+      font-size: 1.5em;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    body:not(.light-mode) #themeToggle:hover {
+      background-color: rgba(255,255,255,0.2);
+    }
+    body.light-mode #themeToggle:hover {
+      background-color: rgba(0,0,0,0.1);
+    }
+    #donateContainer {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1001;
+    }
   </style>
 </head>
 <body>
@@ -193,6 +263,21 @@
       </div>
     </div>
   </div>
+  
+  <!-- Light/Dark Theme Toggle -->
+  <div id="themeContainer">
+    <button id="themeToggle">☀️</button>
+  </div>
+  
+  <!-- Donate Button -->
+  <div id="donateContainer">
+    <script type="text/javascript" src="https://storage.ko-fi.com/cdn/widget/Widget_2.js"></script>
+    <script type="text/javascript">
+      kofiwidget2.init('Support the dev', '#72a4f2', 'Q5Q51BKX92');
+      kofiwidget2.draw();
+    </script>
+  </div>
+  
   <script>
     // ------------------------------
     // Editable Decklist Functions
@@ -566,6 +651,33 @@
       initDecklist([]);
       initHandContainer();
     });
+  </script>
+  
+  <!-- Theme Toggle Script -->
+  <script>
+    // Theme toggle logic
+    const themeToggleBtn = document.getElementById("themeToggle");
+    const applyTheme = theme => {
+      if (theme === "light") {
+        document.body.classList.add("light-mode");
+        themeToggleBtn.textContent = "🌙";
+      } else {
+        document.body.classList.remove("light-mode");
+        themeToggleBtn.textContent = "☀️";
+      }
+    };
+    const toggleTheme = () => {
+      const current = localStorage.getItem("theme") || "dark";
+      const next = current === "dark" ? "light" : "dark";
+      localStorage.setItem("theme", next);
+      applyTheme(next);
+    };
+    themeToggleBtn.addEventListener("click", toggleTheme);
+    const initTheme = () => {
+      const saved = localStorage.getItem("theme") || "dark";
+      applyTheme(saved);
+    };
+    document.addEventListener("DOMContentLoaded", initTheme);
   </script>
 </body>
 </html>
