@@ -19,7 +19,6 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      transition: background 0.3s;
     }
     h1 {
       text-align: center;
@@ -46,14 +45,13 @@
     .right-pane {
       flex: 1;
     }
-    /* Decklist header */
+    /* Decklist Styles */
     .deck-header {
       font-size: 1.2em;
       margin-bottom: 10px;
       text-align: center;
       font-weight: bold;
     }
-    /* Decklist row styling */
     .decklist-row {
       display: flex;
       align-items: center;
@@ -101,26 +99,51 @@
     .decklist-buttons button:hover {
       background-color: #777;
     }
-    /* Good hand specification styles */
-    .good-hand-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 8px;
+    /* Hand Building Interface Styles */
+    .hand-size-control {
+      margin-bottom: 10px;
+      text-align: center;
     }
-    .good-hand-row input[type="text"] {
-      flex: 1;
-      padding: 5px;
+    .hand-size-control label {
+      margin-right: 5px;
+    }
+    .hand-size-control input {
+      width: 50px;
+      padding: 4px;
       border: 1px solid #555;
       border-radius: 4px;
       background: #2e2e2e;
       color: #e0e0e0;
     }
-    .good-hand-buttons {
-      display: flex;
-      gap: 5px;
+    /* Each hand box is visually separated */
+    .hand-box {
+      border: 1px solid #555;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
     }
-    .good-hand-buttons button {
+    .hand-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .hand-row input.hand-card {
+      flex: 1;
+      padding: 4px;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: #2e2e2e;
+      color: #e0e0e0;
+    }
+    /* Hand controls (Add, Remove, Duplicate) all on the same row */
+    .hand-controls {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 5px;
+    }
+    .hand-controls button {
       width: 30px;
       height: 30px;
       border: none;
@@ -130,7 +153,21 @@
       color: #e0e0e0;
       transition: background 0.3s;
     }
-    .good-hand-buttons button:hover {
+    .hand-controls button:hover {
+      background-color: #777;
+    }
+    #addHandButton {
+      display: block;
+      margin: 10px auto;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #555;
+      color: #e0e0e0;
+      transition: background 0.3s;
+    }
+    #addHandButton:hover {
       background-color: #777;
     }
     .right-pane h2 {
@@ -152,16 +189,24 @@
         </div>
       </div>
       <div class="right-pane">
-        <h2>Specify Good Hands</h2>
-        <div id="goodHandsContainer">
-          <!-- Good hand specification rows will be dynamically added here -->
+        <h2>Build Hands</h2>
+        <div class="hand-size-control">
+          <label for="handSizeInput">Hand Size:</label>
+          <input type="number" id="handSizeInput" value="5" min="1">
         </div>
+        <div id="handContainer">
+          <!-- Hand boxes will be dynamically added here -->
+        </div>
+        <button id="addHandButton">Add Hand</button>
+        <!-- Datalist for hand dropdown options -->
+        <datalist id="handOptions"></datalist>
       </div>
     </div>
   </div>
   <script>
-    // --- Editable Decklist Functions ---
-    // Creates a decklist row with quantity, card name, tags field, and add/remove buttons.
+    // ------------------------------
+    // Editable Decklist Functions
+    // ------------------------------
     function createDecklistRow(quantity = 1, cardName = "", tags = "") {
       const row = document.createElement('div');
       row.className = 'decklist-row';
@@ -170,19 +215,24 @@
       qtyInput.type = 'number';
       qtyInput.min = 1;
       qtyInput.value = quantity;
-      qtyInput.addEventListener('input', updateDeckHeader);
+      qtyInput.addEventListener('input', () => {
+        updateDeckHeader();
+        updateHandOptions();
+      });
       
       const nameInput = document.createElement('input');
       nameInput.type = 'text';
       nameInput.placeholder = 'Card Name';
       nameInput.value = cardName;
       nameInput.classList.add('card-name');
+      nameInput.addEventListener('input', updateHandOptions);
       
       const tagsInput = document.createElement('input');
       tagsInput.type = 'text';
       tagsInput.placeholder = 'List Tags: Starter, Handtrap, etc';
       tagsInput.value = tags;
       tagsInput.classList.add('aka-field');
+      tagsInput.addEventListener('input', updateHandOptions);
       
       const btnContainer = document.createElement('div');
       btnContainer.className = 'decklist-buttons';
@@ -194,6 +244,7 @@
         const newRow = createDecklistRow();
         row.parentNode.insertBefore(newRow, row.nextSibling);
         updateDeckHeader();
+        updateHandOptions();
       });
       
       const removeBtn = document.createElement('button');
@@ -201,15 +252,16 @@
       removeBtn.title = 'Remove this decklist row';
       removeBtn.addEventListener('click', () => {
         const container = document.getElementById('decklistContainer');
-        if (container.children.length > 0) {
+        if (container.querySelectorAll('.decklist-row').length > 1) {
           row.remove();
           updateDeckHeader();
+          updateHandOptions();
         } else {
-          // If no row remains, clear its inputs.
           qtyInput.value = 1;
           nameInput.value = "";
           tagsInput.value = "";
           updateDeckHeader();
+          updateHandOptions();
         }
       });
       
@@ -224,20 +276,16 @@
       return row;
     }
     
-    // Update the deck header to display the total count of cards.
     function updateDeckHeader() {
       const container = document.getElementById('decklistContainer');
       let total = 0;
-      Array.from(container.children).forEach(row => {
-        if (row.classList.contains('decklist-row')) {
-          const qtyInput = row.querySelector('input[type="number"]');
-          total += parseInt(qtyInput.value) || 0;
-        }
+      container.querySelectorAll('.decklist-row').forEach(row => {
+        const qtyInput = row.querySelector('input[type="number"]');
+        total += parseInt(qtyInput.value) || 0;
       });
       document.getElementById('decklistHeader').textContent = `Main Deck (${total})`;
     }
     
-    // Initialize the decklist with an array of objects [{quantity, cardName, tags}, ...].
     function initDecklist(data) {
       const container = document.getElementById('decklistContainer');
       container.innerHTML = "";
@@ -249,57 +297,154 @@
         });
       }
       updateDeckHeader();
+      updateHandOptions();
     }
     
-    // --- Good Hand Specification Functions ---
-    function createGoodHandRow(value = "") {
+    // ------------------------------
+    // Hand Building Functions
+    // ------------------------------
+    // updateHandOptions() collects card names and tags from the decklist and updates the datalist.
+    function updateHandOptions() {
+      const deckContainer = document.getElementById('decklistContainer');
+      const optionsSet = new Set();
+      deckContainer.querySelectorAll('.decklist-row').forEach(row => {
+        const cardName = row.querySelector('input.card-name').value.trim();
+        if (cardName) {
+          optionsSet.add(cardName);
+        }
+        const tagsText = row.querySelector('input.aka-field').value;
+        if (tagsText) {
+          tagsText.split(',').forEach(tag => {
+            const trimmed = tag.trim();
+            if (trimmed) {
+              optionsSet.add(trimmed);
+            }
+          });
+        }
+      });
+      // Default option "[Any card]"
+      const optionsArray = Array.from(optionsSet);
+      optionsArray.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      optionsArray.unshift("[Any card]");
+      
+      const datalist = document.getElementById('handOptions');
+      datalist.innerHTML = "";
+      optionsArray.forEach(opt => {
+        const optionElem = document.createElement('option');
+        optionElem.value = opt;
+        datalist.appendChild(optionElem);
+      });
+      updateAllHandRows();
+    }
+    
+    // createHandRow() now creates a hand box containing the hand row and control buttons.
+    function createHandRow() {
+      const box = document.createElement('div');
+      box.className = 'hand-box';
+      
       const row = document.createElement('div');
-      row.className = 'good-hand-row';
+      row.className = 'hand-row';
+      const handSize = parseInt(document.getElementById('handSizeInput').value) || 5;
+      for (let i = 0; i < handSize; i++) {
+        const handCard = document.createElement('input');
+        handCard.type = 'text';
+        handCard.className = 'hand-card';
+        handCard.value = "[Any card]";
+        handCard.setAttribute('list', 'handOptions');
+        row.appendChild(handCard);
+      }
       
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'Enter good hand specification';
-      input.value = value;
-      
-      const btnContainer = document.createElement('div');
-      btnContainer.className = 'good-hand-buttons';
+      const controlContainer = document.createElement('div');
+      controlContainer.className = 'hand-controls';
       
       const addBtn = document.createElement('button');
       addBtn.textContent = '+';
-      addBtn.title = 'Add a new good hand specification row';
+      addBtn.title = 'Add a new hand row below';
       addBtn.addEventListener('click', () => {
-        const newRow = createGoodHandRow();
-        row.parentNode.insertBefore(newRow, row.nextSibling);
+        const newBox = createHandRow();
+        box.parentNode.insertBefore(newBox, box.nextSibling);
       });
       
       const removeBtn = document.createElement('button');
       removeBtn.textContent = '–';
-      removeBtn.title = 'Remove this good hand specification row';
+      removeBtn.title = 'Remove this hand row';
       removeBtn.addEventListener('click', () => {
-        const container = document.getElementById('goodHandsContainer');
+        const container = document.getElementById('handContainer');
         if (container.children.length > 1) {
-          row.remove();
+          box.remove();
         } else {
-          input.value = "";
+          row.querySelectorAll('input.hand-card').forEach(input => input.value = "[Any card]");
         }
       });
       
-      btnContainer.appendChild(addBtn);
-      btnContainer.appendChild(removeBtn);
+      const duplicateBtn = document.createElement('button');
+      duplicateBtn.textContent = '⧉';
+      duplicateBtn.title = 'Duplicate this hand row';
+      duplicateBtn.addEventListener('click', () => {
+        const newBox = createHandRow();
+        // Copy values from current row to duplicate
+        const currentInputs = box.querySelectorAll('input.hand-card');
+        const newInputs = newBox.querySelectorAll('input.hand-card');
+        currentInputs.forEach((input, i) => {
+          newInputs[i].value = input.value;
+        });
+        box.parentNode.insertBefore(newBox, box.nextSibling);
+      });
       
-      row.appendChild(input);
-      row.appendChild(btnContainer);
-      return row;
+      controlContainer.appendChild(addBtn);
+      controlContainer.appendChild(removeBtn);
+      controlContainer.appendChild(duplicateBtn);
+      
+      box.appendChild(row);
+      box.appendChild(controlContainer);
+      return box;
     }
     
-    function initGoodHands() {
-      const container = document.getElementById('goodHandsContainer');
+    function updateAllHandRows() {
+      const handSize = parseInt(document.getElementById('handSizeInput').value) || 5;
+      const handContainer = document.getElementById('handContainer');
+      handContainer.querySelectorAll('.hand-box').forEach(box => {
+        const row = box.querySelector('.hand-row');
+        const currentCount = row.querySelectorAll('input.hand-card').length;
+        if (currentCount < handSize) {
+          for (let i = currentCount; i < handSize; i++) {
+            const handCard = document.createElement('input');
+            handCard.type = 'text';
+            handCard.className = 'hand-card';
+            handCard.value = "[Any card]";
+            handCard.setAttribute('list', 'handOptions');
+            row.insertBefore(handCard, box.querySelector('.hand-controls'));
+          }
+        } else if (currentCount > handSize) {
+          for (let i = currentCount; i > handSize; i--) {
+            const inputs = row.querySelectorAll('input.hand-card');
+            inputs[inputs.length - 1].remove();
+          }
+        }
+      });
+    }
+    
+    function initHandContainer() {
+      const container = document.getElementById('handContainer');
       container.innerHTML = "";
-      container.appendChild(createGoodHandRow());
+      container.appendChild(createHandRow());
     }
     
-    // --- File Parsing and Integration ---
-    // Parses a .ydk file to extract only main deck card IDs.
+    // ------------------------------
+    // Event Listeners
+    // ------------------------------
+    document.getElementById('handSizeInput').addEventListener('input', () => {
+      updateAllHandRows();
+    });
+    
+    document.getElementById('addHandButton').addEventListener('click', () => {
+      const container = document.getElementById('handContainer');
+      container.appendChild(createHandRow());
+    });
+    
+    // ------------------------------
+    // File Parsing and Integration
+    // ------------------------------
     function parseYDK(text) {
       const lines = text.split(/\r?\n/);
       const main = [];
@@ -322,7 +467,6 @@
       return main;
     }
     
-    // Fetches card details from the YGOPRODeck API.
     async function fetchCardDetails(ids) {
       const uniqueIds = Array.from(new Set(ids));
       const parameter = uniqueIds.join(",");
@@ -335,7 +479,6 @@
       return cardMap;
     }
     
-    // When a file is loaded, parse it and initialize the decklist.
     document.getElementById('fileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -349,7 +492,6 @@
         }
         try {
           const cardMap = await fetchCardDetails(mainDeckIDs);
-          // Group by card ID and build an array of {quantity, cardName, tags} objects.
           const counts = {};
           mainDeckIDs.forEach(id => {
             counts[id] = (counts[id] || 0) + 1;
@@ -367,10 +509,9 @@
       reader.readAsText(file);
     });
     
-    // Initialize the editable decklist and good hand rows on page load.
     document.addEventListener('DOMContentLoaded', () => {
       initDecklist([]);
-      initGoodHands();
+      initHandContainer();
     });
   </script>
 </body>
