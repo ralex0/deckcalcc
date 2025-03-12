@@ -24,10 +24,54 @@
       text-align: center;
       margin-bottom: 20px;
     }
-    input[type="file"] {
-      display: block;
-      margin: 0 auto 20px auto;
+    /* Top Controls Styles */
+    .top-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
     }
+    .top-controls button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #555;
+      color: #e0e0e0;
+      transition: background 0.3s;
+    }
+    .top-controls button:hover {
+      background-color: #777;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .control-group label {
+      margin-bottom: 5px;
+    }
+    .control-group input[type="number"] {
+      width: 100px;
+      padding: 5px;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: #2e2e2e;
+      color: #e0e0e0;
+    }
+    #calcResult {
+      font-size: 1.5em;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      border: 2px solid;
+      border-radius: 4px;
+      margin-top: 15px;
+      width: 100%;
+    }
+    /* Row Layout */
     .row {
       display: flex;
       gap: 20px;
@@ -115,7 +159,6 @@
       background: #2e2e2e;
       color: #e0e0e0;
     }
-    /* Each hand box is visually separated */
     .hand-box {
       border: 1px solid #555;
       padding: 8px;
@@ -129,7 +172,6 @@
       flex-wrap: wrap;
       margin-bottom: 5px;
     }
-    /* Hand card input styled as a dropdown */
     .hand-card {
       flex: 1;
       padding: 4px;
@@ -141,7 +183,6 @@
       -moz-appearance: menulist-button;
       appearance: menulist-button;
     }
-    /* Hand controls grouped on one row */
     .hand-controls {
       display: flex;
       justify-content: center;
@@ -187,12 +228,14 @@
       border-color: #ccc;
     }
     body.light-mode .decklist-buttons button,
-    body.light-mode .hand-controls button {
+    body.light-mode .hand-controls button,
+    body.light-mode .top-controls button {
       background-color: #ccc;
       color: #000;
     }
     body.light-mode .decklist-buttons button:hover,
-    body.light-mode .hand-controls button:hover {
+    body.light-mode .hand-controls button:hover,
+    body.light-mode .top-controls button:hover {
       background-color: #aaa;
     }
     body.light-mode .hand-card {
@@ -200,7 +243,8 @@
       color: #000;
       border-color: #ccc;
     }
-    body.light-mode .hand-size-control input {
+    body.light-mode .hand-size-control input,
+    body.light-mode .control-group input[type="number"] {
       background: #fff;
       color: #000;
       border-color: #ccc;
@@ -240,7 +284,21 @@
 <body>
   <div class="container">
     <h1>Yu-Gi-Oh! Hand simulator</h1>
-    <input type="file" id="fileInput" accept=".ydk">
+    
+    <!-- Top Controls -->
+    <div class="top-controls">
+      <button id="importDeckButton">Import Deck.</button>
+      <input type="file" id="fileInput" accept=".ydk" style="display: none;">
+      
+      <div class="control-group">
+        <label for="numTrials">Number of test hands to draw:</label>
+        <input type="number" id="numTrials" value="100" min="1">
+      </div>
+      
+      <button id="calculateButton">Calculate</button>
+      <div id="calcResult">Result: Placeholder</div>
+    </div>
+    
     <div class="row">
       <div class="left-pane">
         <!-- Editable decklist header and container -->
@@ -413,7 +471,6 @@
     }
     
     function updateHandSelectOptions() {
-      // Update each existing hand select element with the current options.
       const datalist = document.getElementById('handOptions');
       const newOptions = Array.from(datalist.options).map(opt => ({ value: opt.value, text: opt.value }));
       document.querySelectorAll('select.hand-card').forEach(select => {
@@ -571,16 +628,6 @@
     }
     
     // ------------------------------
-    // Event Listeners
-    // ------------------------------
-    document.getElementById('handSizeInput').addEventListener('input', () => {
-      updateAllHandRows();
-    });
-    
-    // Listener for custom decklistLoaded event to update hand options.
-    document.addEventListener('decklistLoaded', updateHandOptions);
-    
-    // ------------------------------
     // File Parsing and Integration
     // ------------------------------
     function parseYDK(text) {
@@ -653,9 +700,23 @@
     });
   </script>
   
+  <!-- New Controls Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Trigger hidden file input when "Import Deck." is clicked
+      document.getElementById('importDeckButton').addEventListener('click', function() {
+        document.getElementById('fileInput').click();
+      });
+      
+      // Calculate button (currently shows placeholder result)
+      document.getElementById('calculateButton').addEventListener('click', function() {
+        document.getElementById('calcResult').textContent = "Result: Placeholder";
+      });
+    });
+  </script>
+  
   <!-- Theme Toggle Script -->
   <script>
-    // Theme toggle logic
     const themeToggleBtn = document.getElementById("themeToggle");
     const applyTheme = theme => {
       if (theme === "light") {
