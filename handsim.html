@@ -68,7 +68,15 @@
       background: #2e2e2e;
       color: #e0e0e0;
     }
-    .decklist-row input[type="text"] {
+    .decklist-row input.card-name {
+      flex: 2;
+      padding: 4px;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: #2e2e2e;
+      color: #e0e0e0;
+    }
+    .decklist-row input.aka-field {
       flex: 1;
       padding: 4px;
       border: 1px solid #555;
@@ -153,8 +161,8 @@
   </div>
   <script>
     // --- Editable Decklist Functions ---
-    // Creates a decklist row with a quantity input, card name input, and add/remove buttons.
-    function createDecklistRow(quantity = 1, cardName = "") {
+    // Creates a decklist row with quantity, card name, tags field, and add/remove buttons.
+    function createDecklistRow(quantity = 1, cardName = "", tags = "") {
       const row = document.createElement('div');
       row.className = 'decklist-row';
       
@@ -168,6 +176,13 @@
       nameInput.type = 'text';
       nameInput.placeholder = 'Card Name';
       nameInput.value = cardName;
+      nameInput.classList.add('card-name');
+      
+      const tagsInput = document.createElement('input');
+      tagsInput.type = 'text';
+      tagsInput.placeholder = 'List Tags: Starter, Handtrap, etc';
+      tagsInput.value = tags;
+      tagsInput.classList.add('aka-field');
       
       const btnContainer = document.createElement('div');
       btnContainer.className = 'decklist-buttons';
@@ -186,13 +201,14 @@
       removeBtn.title = 'Remove this decklist row';
       removeBtn.addEventListener('click', () => {
         const container = document.getElementById('decklistContainer');
-        if (container.children.length > 1) {
+        if (container.children.length > 0) {
           row.remove();
           updateDeckHeader();
         } else {
-          // If only one row remains, clear its inputs.
+          // If no row remains, clear its inputs.
           qtyInput.value = 1;
           nameInput.value = "";
+          tagsInput.value = "";
           updateDeckHeader();
         }
       });
@@ -202,6 +218,7 @@
       
       row.appendChild(qtyInput);
       row.appendChild(nameInput);
+      row.appendChild(tagsInput);
       row.appendChild(btnContainer);
       
       return row;
@@ -212,13 +229,15 @@
       const container = document.getElementById('decklistContainer');
       let total = 0;
       Array.from(container.children).forEach(row => {
-        const qtyInput = row.querySelector('input[type="number"]');
-        total += parseInt(qtyInput.value) || 0;
+        if (row.classList.contains('decklist-row')) {
+          const qtyInput = row.querySelector('input[type="number"]');
+          total += parseInt(qtyInput.value) || 0;
+        }
       });
       document.getElementById('decklistHeader').textContent = `Main Deck (${total})`;
     }
     
-    // Initialize the decklist with an array of objects [{quantity, cardName}, ...].
+    // Initialize the decklist with an array of objects [{quantity, cardName, tags}, ...].
     function initDecklist(data) {
       const container = document.getElementById('decklistContainer');
       container.innerHTML = "";
@@ -226,7 +245,7 @@
         container.appendChild(createDecklistRow());
       } else {
         data.forEach(item => {
-          container.appendChild(createDecklistRow(item.quantity, item.cardName));
+          container.appendChild(createDecklistRow(item.quantity, item.cardName, item.tags || ""));
         });
       }
       updateDeckHeader();
@@ -330,7 +349,7 @@
         }
         try {
           const cardMap = await fetchCardDetails(mainDeckIDs);
-          // Group by card ID and build an array of {quantity, cardName} objects.
+          // Group by card ID and build an array of {quantity, cardName, tags} objects.
           const counts = {};
           mainDeckIDs.forEach(id => {
             counts[id] = (counts[id] || 0) + 1;
@@ -338,7 +357,7 @@
           const deckData = [];
           for (const id in counts) {
             const card = cardMap.get(id);
-            deckData.push({ quantity: counts[id], cardName: card ? card.name : `Unknown card (ID: ${id})` });
+            deckData.push({ quantity: counts[id], cardName: card ? card.name : `Unknown card (ID: ${id})`, tags: "" });
           }
           initDecklist(deckData);
         } catch (err) {
