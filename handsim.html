@@ -27,11 +27,11 @@
     /* Top Controls Styles */
     .top-controls {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
       align-items: center;
-      margin-bottom: 20px;
+      gap: 10px;
+      flex-wrap: nowrap;
+      justify-content: center;
+      margin-bottom: 10px;
     }
     .top-controls button {
       padding: 10px 20px;
@@ -47,11 +47,11 @@
     }
     .control-group {
       display: flex;
-      flex-direction: column;
       align-items: center;
+      gap: 5px;
     }
     .control-group label {
-      margin-bottom: 5px;
+      white-space: nowrap;
     }
     .control-group input[type="number"] {
       width: 100px;
@@ -68,8 +68,9 @@
       padding: 10px;
       border: 2px solid;
       border-radius: 4px;
-      margin-top: 15px;
       width: 100%;
+      margin-top: 10px;
+      display: none;
     }
     /* Row Layout */
     .row {
@@ -89,13 +90,31 @@
     .right-pane {
       flex: 1;
     }
-    /* Decklist Styles */
+    /* Header Container Styles for Both Panes */
+    .deck-header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: nowrap;
+      margin-bottom: 10px;
+    }
     .deck-header {
       font-size: 1.2em;
-      margin-bottom: 10px;
-      text-align: center;
       font-weight: bold;
     }
+    .deck-header-container button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #555;
+      color: #e0e0e0;
+      transition: background 0.3s;
+    }
+    .deck-header-container button:hover {
+      background-color: #777;
+    }
+    /* Decklist Styles */
     .decklist-row {
       display: flex;
       align-items: center;
@@ -145,11 +164,13 @@
     }
     /* Hand Building Interface Styles */
     .hand-size-control {
-      margin-bottom: 10px;
-      text-align: center;
+      margin: 0;
+      display: flex;
+      align-items: center;
     }
     .hand-size-control label {
       margin-right: 5px;
+      white-space: nowrap;
     }
     .hand-size-control input {
       width: 50px;
@@ -202,10 +223,6 @@
     .hand-controls button:hover {
       background-color: #777;
     }
-    .right-pane h2 {
-      margin-top: 0;
-      text-align: center;
-    }
     /* Light mode overrides */
     body.light-mode {
       background-color: #f7f7f7;
@@ -229,13 +246,15 @@
     }
     body.light-mode .decklist-buttons button,
     body.light-mode .hand-controls button,
-    body.light-mode .top-controls button {
+    body.light-mode .top-controls button,
+    body.light-mode .deck-header-container button {
       background-color: #ccc;
       color: #000;
     }
     body.light-mode .decklist-buttons button:hover,
     body.light-mode .hand-controls button:hover,
-    body.light-mode .top-controls button:hover {
+    body.light-mode .top-controls button:hover,
+    body.light-mode .deck-header-container button:hover {
       background-color: #aaa;
     }
     body.light-mode .hand-card {
@@ -285,33 +304,36 @@
   <div class="container">
     <h1>Yu-Gi-Oh! Hand simulator</h1>
     
-    <!-- Top Controls -->
+    <!-- Top Controls (on one line) -->
     <div class="top-controls">
-      <button id="importDeckButton">Import Deck.</button>
-      <input type="file" id="fileInput" accept=".ydk" style="display: none;">
-      
       <div class="control-group">
         <label for="numTrials">Number of test hands to draw:</label>
         <input type="number" id="numTrials" value="100" min="1">
       </div>
-      
       <button id="calculateButton">Calculate</button>
-      <div id="calcResult">Result: Placeholder</div>
     </div>
+    <!-- Result appears on a new row -->
+    <div id="calcResult">Result: Placeholder</div>
     
     <div class="row">
       <div class="left-pane">
-        <!-- Editable decklist header and container -->
-        <div id="decklistHeader" class="deck-header">Main Deck (0)</div>
+        <!-- Decklist Header with Import Control -->
+        <div class="deck-header-container">
+          <div id="decklistHeader" class="deck-header">Main Deck (0)</div>
+          <button id="importDeckButton">Import deck...</button>
+        </div>
         <div id="decklistContainer">
           <!-- Decklist rows will be dynamically added here -->
         </div>
       </div>
       <div class="right-pane">
-        <h2>Build Hands</h2>
-        <div class="hand-size-control">
-          <label for="handSizeInput">Hand Size:</label>
-          <input type="number" id="handSizeInput" value="5" min="1">
+        <!-- Build Hands Header with Hand Size Control on one line -->
+        <div class="deck-header-container">
+          <div id="handHeader" class="deck-header">Build Hands</div>
+          <div class="hand-size-control">
+            <label for="handSizeInput">Hand Size:</label>
+            <input type="number" id="handSizeInput" value="5" min="1">
+          </div>
         </div>
         <div id="handContainer">
           <!-- Hand boxes will be dynamically added here -->
@@ -320,6 +342,9 @@
         <datalist id="handOptions"></datalist>
       </div>
     </div>
+    
+    <!-- Hidden file input remains for deck import -->
+    <input type="file" id="fileInput" accept=".ydk" style="display: none;">
   </div>
   
   <!-- Light/Dark Theme Toggle -->
@@ -703,14 +728,21 @@
   <!-- New Controls Script -->
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Trigger hidden file input when "Import Deck." is clicked
+      // Trigger hidden file input when "Import deck..." is clicked
       document.getElementById('importDeckButton').addEventListener('click', function() {
         document.getElementById('fileInput').click();
       });
       
-      // Calculate button (currently shows placeholder result)
+      // Calculate button shows result on a new row when clicked
       document.getElementById('calculateButton').addEventListener('click', function() {
         document.getElementById('calcResult').textContent = "Result: Placeholder";
+        document.getElementById('calcResult').style.display = "block";
+      });
+      
+      // Update hand rows when hand size changes
+      document.getElementById('handSizeInput').addEventListener('input', function() {
+        updateAllHandRows();
+        updateHandSelectOptions();
       });
     });
   </script>
