@@ -129,7 +129,7 @@
       flex-wrap: wrap;
       margin-bottom: 5px;
     }
-    /* Hand card input styled to look like a drop-down */
+    /* Hand card input styled as a dropdown */
     .hand-card {
       flex: 1;
       padding: 4px;
@@ -161,20 +161,6 @@
     .hand-controls button:hover {
       background-color: #777;
     }
-    #addHandButton {
-      display: block;
-      margin: 10px auto;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background-color: #555;
-      color: #e0e0e0;
-      transition: background 0.3s;
-    }
-    #addHandButton:hover {
-      background-color: #777;
-    }
     .right-pane h2 {
       margin-top: 0;
       text-align: center;
@@ -202,7 +188,6 @@
         <div id="handContainer">
           <!-- Hand boxes will be dynamically added here -->
         </div>
-        <button id="addHandButton">Add Hand</button>
         <!-- Datalist for hand dropdown options -->
         <datalist id="handOptions"></datalist>
       </div>
@@ -303,12 +288,12 @@
       }
       updateDeckHeader();
       updateHandOptions();
+      document.dispatchEvent(new Event('decklistLoaded'));
     }
     
     // ------------------------------
     // Hand Building Functions
     // ------------------------------
-    // updateHandOptions() collects card names and tags from the decklist and updates the datalist.
     function updateHandOptions() {
       const deckContainer = document.getElementById('decklistContainer');
       const optionsSet = new Set();
@@ -327,7 +312,6 @@
           });
         }
       });
-      // Include default option "[Any Card]"
       const optionsArray = Array.from(optionsSet);
       optionsArray.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
       optionsArray.unshift("[Any Card]");
@@ -340,19 +324,42 @@
         datalist.appendChild(optionElem);
       });
       updateAllHandRows();
+      updateHandSelectOptions();
     }
     
-    // Helper: Validate a hand card input.
+    function updateHandSelectOptions() {
+      // Update each existing hand select element with the current options.
+      const datalist = document.getElementById('handOptions');
+      const newOptions = Array.from(datalist.options).map(opt => ({ value: opt.value, text: opt.value }));
+      document.querySelectorAll('select.hand-card').forEach(select => {
+        const currentVal = select.value;
+        select.innerHTML = "";
+        const defaultOption = document.createElement('option');
+        defaultOption.textContent = "Card name or tag";
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        select.appendChild(defaultOption);
+        newOptions.forEach(optData => {
+          const optionElem = document.createElement('option');
+          optionElem.value = optData.value;
+          optionElem.textContent = optData.text;
+          select.appendChild(optionElem);
+        });
+        const allowedValues = newOptions.map(opt => opt.value);
+        if (allowedValues.includes(currentVal)) {
+          select.value = currentVal;
+        }
+      });
+    }
+    
     function validateHandCardInput(input) {
       let value = input.value.trim();
       if (!value) return;
-      // Gather allowed options from the datalist.
       const datalist = document.getElementById('handOptions');
       const allowed = Array.from(datalist.options).map(opt => opt.value);
       if (allowed.includes(value)) {
-        return; // Valid as-is.
+        return;
       } else {
-        // Check for a case-insensitive match.
         const matched = allowed.find(v => v.toLowerCase() === value.toLowerCase());
         if (matched) {
           input.value = matched;
@@ -362,7 +369,6 @@
       }
     }
     
-    // createHandRow() creates a hand box containing a row of dropdowns and control buttons.
     function createHandRow() {
       const box = document.createElement('div');
       box.className = 'hand-box';
@@ -371,12 +377,20 @@
       row.className = 'hand-row';
       const handSize = parseInt(document.getElementById('handSizeInput').value) || 5;
       for (let i = 0; i < handSize; i++) {
-        const handCard = document.createElement('input');
-        handCard.type = 'text';
+        const handCard = document.createElement('select');
         handCard.className = 'hand-card';
-        handCard.placeholder = 'Card name or tag';
-        handCard.setAttribute('list', 'handOptions');
-        // Validate when focus is lost.
+        const defaultOption = document.createElement('option');
+        defaultOption.textContent = "Card name or tag";
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        handCard.appendChild(defaultOption);
+        const datalist = document.getElementById('handOptions');
+        Array.from(datalist.options).forEach(opt => {
+          const optionElem = document.createElement('option');
+          optionElem.value = opt.value;
+          optionElem.textContent = opt.value;
+          handCard.appendChild(optionElem);
+        });
         handCard.addEventListener('blur', () => {
           validateHandCardInput(handCard);
         });
@@ -402,7 +416,7 @@
         if (container.children.length > 1) {
           box.remove();
         } else {
-          row.querySelectorAll('input.hand-card').forEach(input => input.value = "");
+          row.querySelectorAll('select.hand-card').forEach(select => select.selectedIndex = 0);
         }
       });
       
@@ -411,11 +425,10 @@
       duplicateBtn.title = 'Duplicate this hand row';
       duplicateBtn.addEventListener('click', () => {
         const newBox = createHandRow();
-        // Copy current hand card values into the duplicate.
-        const currentInputs = box.querySelectorAll('input.hand-card');
-        const newInputs = newBox.querySelectorAll('input.hand-card');
-        currentInputs.forEach((input, i) => {
-          newInputs[i].value = input.value;
+        const currentSelects = box.querySelectorAll('select.hand-card');
+        const newSelects = newBox.querySelectorAll('select.hand-card');
+        currentSelects.forEach((select, i) => {
+          newSelects[i].value = select.value;
         });
         box.parentNode.insertBefore(newBox, box.nextSibling);
       });
@@ -434,14 +447,23 @@
       const handContainer = document.getElementById('handContainer');
       handContainer.querySelectorAll('.hand-box').forEach(box => {
         const row = box.querySelector('.hand-row');
-        const currentCount = row.querySelectorAll('input.hand-card').length;
+        const currentCount = row.querySelectorAll('select.hand-card').length;
         if (currentCount < handSize) {
           for (let i = currentCount; i < handSize; i++) {
-            const handCard = document.createElement('input');
-            handCard.type = 'text';
+            const handCard = document.createElement('select');
             handCard.className = 'hand-card';
-            handCard.placeholder = 'Card name or tag';
-            handCard.setAttribute('list', 'handOptions');
+            const defaultOption = document.createElement('option');
+            defaultOption.textContent = "Card name or tag";
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            handCard.appendChild(defaultOption);
+            const datalist = document.getElementById('handOptions');
+            Array.from(datalist.options).forEach(opt => {
+              const optionElem = document.createElement('option');
+              optionElem.value = opt.value;
+              optionElem.textContent = opt.value;
+              handCard.appendChild(optionElem);
+            });
             handCard.addEventListener('blur', () => {
               validateHandCardInput(handCard);
             });
@@ -449,11 +471,12 @@
           }
         } else if (currentCount > handSize) {
           for (let i = currentCount; i > handSize; i--) {
-            const inputs = row.querySelectorAll('input.hand-card');
-            inputs[inputs.length - 1].remove();
+            const selects = row.querySelectorAll('select.hand-card');
+            selects[selects.length - 1].remove();
           }
         }
       });
+      updateHandSelectOptions();
     }
     
     function initHandContainer() {
@@ -469,10 +492,8 @@
       updateAllHandRows();
     });
     
-    document.getElementById('addHandButton').addEventListener('click', () => {
-      const container = document.getElementById('handContainer');
-      container.appendChild(createHandRow());
-    });
+    // Listener for custom decklistLoaded event to update hand options.
+    document.addEventListener('decklistLoaded', updateHandOptions);
     
     // ------------------------------
     // File Parsing and Integration
