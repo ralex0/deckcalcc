@@ -41,30 +41,57 @@
     }
     .left-pane {
       flex: 2;
-      /* Enough height to show 40–60 cards without scrolling */
       min-height: 600px;
     }
     .right-pane {
       flex: 1;
     }
-    /* Main deck header */
+    /* Decklist header */
     .deck-header {
       font-size: 1.2em;
       margin-bottom: 10px;
       text-align: center;
       font-weight: bold;
     }
-    .card-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    /* Decklist row styling */
+    .decklist-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
     }
-    .card-list li {
-      padding: 4px 0;
-      border-bottom: 1px solid #444;
+    .decklist-row input[type="number"] {
+      width: 60px;
+      padding: 4px;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: #2e2e2e;
+      color: #e0e0e0;
     }
-    .card-list li:last-child {
-      border-bottom: none;
+    .decklist-row input[type="text"] {
+      flex: 1;
+      padding: 4px;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: #2e2e2e;
+      color: #e0e0e0;
+    }
+    .decklist-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    .decklist-buttons button {
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #555;
+      color: #e0e0e0;
+      transition: background 0.3s;
+    }
+    .decklist-buttons button:hover {
+      background-color: #777;
     }
     /* Good hand specification styles */
     .good-hand-row {
@@ -109,45 +136,151 @@
     <h1>Yu-Gi-Oh! Hand simulator</h1>
     <input type="file" id="fileInput" accept=".ydk">
     <div class="row">
-      <div class="left-pane" id="output">
-        <!-- Main deck list will be inserted here -->
+      <div class="left-pane">
+        <!-- Editable decklist header and container -->
+        <div id="decklistHeader" class="deck-header">Main Deck (0)</div>
+        <div id="decklistContainer">
+          <!-- Decklist rows will be dynamically added here -->
+        </div>
       </div>
       <div class="right-pane">
         <h2>Specify Good Hands</h2>
         <div id="goodHandsContainer">
-          <!-- Good hand rows will be inserted here -->
+          <!-- Good hand specification rows will be dynamically added here -->
         </div>
       </div>
     </div>
   </div>
-
   <script>
-    // --- Main deck parsing and display functions ---
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async function(event) {
-        const text = event.target.result;
-        // Parse the file for the main deck only.
-        const mainDeck = parseYDK(text);
-        if (mainDeck.length === 0) {
-          document.getElementById('output').textContent = 'No cards found in the file.';
-          return;
+    // --- Editable Decklist Functions ---
+    // Creates a decklist row with a quantity input, card name input, and add/remove buttons.
+    function createDecklistRow(quantity = 1, cardName = "") {
+      const row = document.createElement('div');
+      row.className = 'decklist-row';
+      
+      const qtyInput = document.createElement('input');
+      qtyInput.type = 'number';
+      qtyInput.min = 1;
+      qtyInput.value = quantity;
+      qtyInput.addEventListener('input', updateDeckHeader);
+      
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = 'Card Name';
+      nameInput.value = cardName;
+      
+      const btnContainer = document.createElement('div');
+      btnContainer.className = 'decklist-buttons';
+      
+      const addBtn = document.createElement('button');
+      addBtn.textContent = '+';
+      addBtn.title = 'Add a new decklist row below';
+      addBtn.addEventListener('click', () => {
+        const newRow = createDecklistRow();
+        row.parentNode.insertBefore(newRow, row.nextSibling);
+        updateDeckHeader();
+      });
+      
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '–';
+      removeBtn.title = 'Remove this decklist row';
+      removeBtn.addEventListener('click', () => {
+        const container = document.getElementById('decklistContainer');
+        if (container.children.length > 1) {
+          row.remove();
+          updateDeckHeader();
+        } else {
+          // If only one row remains, clear its inputs.
+          qtyInput.value = 1;
+          nameInput.value = "";
+          updateDeckHeader();
         }
-        try {
-          // Fetch card details for the main deck
-          const cardMap = await fetchCardDetails(mainDeck);
-          // Display the main deck list with grouped counts.
-          displayMainDeck(mainDeck, cardMap);
-        } catch (err) {
-          document.getElementById('output').textContent = 'Error fetching card details: ' + err;
-        }
+      });
+      
+      btnContainer.appendChild(addBtn);
+      btnContainer.appendChild(removeBtn);
+      
+      row.appendChild(qtyInput);
+      row.appendChild(nameInput);
+      row.appendChild(btnContainer);
+      
+      return row;
+    }
+    
+    // Update the deck header to display the total count of cards.
+    function updateDeckHeader() {
+      const container = document.getElementById('decklistContainer');
+      let total = 0;
+      Array.from(container.children).forEach(row => {
+        const qtyInput = row.querySelector('input[type="number"]');
+        total += parseInt(qtyInput.value) || 0;
+      });
+      document.getElementById('decklistHeader').textContent = `Main Deck (${total})`;
+    }
+    
+    // Initialize the decklist with an array of objects [{quantity, cardName}, ...].
+    function initDecklist(data) {
+      const container = document.getElementById('decklistContainer');
+      container.innerHTML = "";
+      if (data.length === 0) {
+        container.appendChild(createDecklistRow());
+      } else {
+        data.forEach(item => {
+          container.appendChild(createDecklistRow(item.quantity, item.cardName));
+        });
       }
-      reader.readAsText(file);
-    });
-
-    // Extract only the main deck card IDs from a .ydk file.
+      updateDeckHeader();
+    }
+    
+    // --- Good Hand Specification Functions ---
+    function createGoodHandRow(value = "") {
+      const row = document.createElement('div');
+      row.className = 'good-hand-row';
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Enter good hand specification';
+      input.value = value;
+      
+      const btnContainer = document.createElement('div');
+      btnContainer.className = 'good-hand-buttons';
+      
+      const addBtn = document.createElement('button');
+      addBtn.textContent = '+';
+      addBtn.title = 'Add a new good hand specification row';
+      addBtn.addEventListener('click', () => {
+        const newRow = createGoodHandRow();
+        row.parentNode.insertBefore(newRow, row.nextSibling);
+      });
+      
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '–';
+      removeBtn.title = 'Remove this good hand specification row';
+      removeBtn.addEventListener('click', () => {
+        const container = document.getElementById('goodHandsContainer');
+        if (container.children.length > 1) {
+          row.remove();
+        } else {
+          input.value = "";
+        }
+      });
+      
+      btnContainer.appendChild(addBtn);
+      btnContainer.appendChild(removeBtn);
+      
+      row.appendChild(input);
+      row.appendChild(btnContainer);
+      return row;
+    }
+    
+    function initGoodHands() {
+      const container = document.getElementById('goodHandsContainer');
+      container.innerHTML = "";
+      container.appendChild(createGoodHandRow());
+    }
+    
+    // --- File Parsing and Integration ---
+    // Parses a .ydk file to extract only main deck card IDs.
     function parseYDK(text) {
       const lines = text.split(/\r?\n/);
       const main = [];
@@ -169,8 +302,8 @@
       }
       return main;
     }
-
-    // Fetch card details from the YGOPRODeck API.
+    
+    // Fetches card details from the YGOPRODeck API.
     async function fetchCardDetails(ids) {
       const uniqueIds = Array.from(new Set(ids));
       const parameter = uniqueIds.join(",");
@@ -182,91 +315,42 @@
       }
       return cardMap;
     }
-
-    // Display the main deck list with a header showing the card count and grouped counts per card.
-    function displayMainDeck(deck, cardMap) {
-      const output = document.getElementById('output');
-      output.innerHTML = ''; // Clear previous content
-      
-      // Create header label "Main Deck (XX)"
-      const header = document.createElement('div');
-      header.className = 'deck-header';
-      header.textContent = `Main Deck (${deck.length})`;
-      output.appendChild(header);
-      
-      // Count the frequency for each card ID.
-      const counts = {};
-      deck.forEach(id => {
-        counts[id] = (counts[id] || 0) + 1;
-      });
-      
-      // Build the card list.
-      const list = document.createElement('ul');
-      list.className = 'card-list';
-      for (const id in counts) {
-        const count = counts[id];
-        const card = cardMap.get(id);
-        const li = document.createElement('li');
-        li.textContent = `${count} - ${card ? card.name : `Unknown card (ID: ${id})`}`;
-        list.appendChild(li);
-      }
-      output.appendChild(list);
-    }
-
-    // --- Good Hand Specification Functions ---
-    // Create a new good-hand row.
-    function createGoodHandRow(value = "") {
-      const row = document.createElement('div');
-      row.className = 'good-hand-row';
-      
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'Enter good hand specification';
-      input.value = value;
-      
-      const btnContainer = document.createElement('div');
-      btnContainer.className = 'good-hand-buttons';
-      
-      const addBtn = document.createElement('button');
-      addBtn.textContent = '+';
-      addBtn.title = 'Add a new good hand specification row';
-      addBtn.addEventListener('click', () => {
-        // Insert a new row after the current row.
-        const newRow = createGoodHandRow();
-        row.parentNode.insertBefore(newRow, row.nextSibling);
-      });
-      
-      const removeBtn = document.createElement('button');
-      removeBtn.textContent = '–';
-      removeBtn.title = 'Remove this good hand specification row';
-      removeBtn.addEventListener('click', () => {
-        // Only remove if there's more than one row.
-        const container = document.getElementById('goodHandsContainer');
-        if (container.children.length > 1) {
-          row.remove();
-        } else {
-          // If only one row remains, just clear its value.
-          input.value = "";
+    
+    // When a file is loaded, parse it and initialize the decklist.
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(event) {
+        const text = event.target.result;
+        const mainDeckIDs = parseYDK(text);
+        if (mainDeckIDs.length === 0) {
+          alert('No cards found in the file.');
+          return;
         }
-      });
-      
-      btnContainer.appendChild(addBtn);
-      btnContainer.appendChild(removeBtn);
-      
-      row.appendChild(input);
-      row.appendChild(btnContainer);
-      return row;
-    }
-
-    // Initialize the good hand specification box with one row.
-    function initGoodHands() {
-      const container = document.getElementById('goodHandsContainer');
-      container.innerHTML = "";
-      container.appendChild(createGoodHandRow());
-    }
-
-    // Initialize good hand rows on page load.
+        try {
+          const cardMap = await fetchCardDetails(mainDeckIDs);
+          // Group by card ID and build an array of {quantity, cardName} objects.
+          const counts = {};
+          mainDeckIDs.forEach(id => {
+            counts[id] = (counts[id] || 0) + 1;
+          });
+          const deckData = [];
+          for (const id in counts) {
+            const card = cardMap.get(id);
+            deckData.push({ quantity: counts[id], cardName: card ? card.name : `Unknown card (ID: ${id})` });
+          }
+          initDecklist(deckData);
+        } catch (err) {
+          alert('Error fetching card details: ' + err);
+        }
+      }
+      reader.readAsText(file);
+    });
+    
+    // Initialize the editable decklist and good hand rows on page load.
     document.addEventListener('DOMContentLoaded', () => {
+      initDecklist([]);
       initGoodHands();
     });
   </script>
