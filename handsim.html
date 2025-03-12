@@ -127,16 +127,21 @@
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
+      margin-bottom: 5px;
     }
-    .hand-row input.hand-card {
+    /* Hand card input styled to look like a drop-down */
+    .hand-card {
       flex: 1;
       padding: 4px;
       border: 1px solid #555;
       border-radius: 4px;
       background: #2e2e2e;
       color: #e0e0e0;
+      -webkit-appearance: menulist-button;
+      -moz-appearance: menulist-button;
+      appearance: menulist-button;
     }
-    /* Hand controls (Add, Remove, Duplicate) all on the same row */
+    /* Hand controls grouped on one row */
     .hand-controls {
       display: flex;
       justify-content: center;
@@ -322,10 +327,10 @@
           });
         }
       });
-      // Default option "[Any card]"
+      // Include default option "[Any Card]"
       const optionsArray = Array.from(optionsSet);
       optionsArray.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-      optionsArray.unshift("[Any card]");
+      optionsArray.unshift("[Any Card]");
       
       const datalist = document.getElementById('handOptions');
       datalist.innerHTML = "";
@@ -337,7 +342,27 @@
       updateAllHandRows();
     }
     
-    // createHandRow() now creates a hand box containing the hand row and control buttons.
+    // Helper: Validate a hand card input.
+    function validateHandCardInput(input) {
+      let value = input.value.trim();
+      if (!value) return;
+      // Gather allowed options from the datalist.
+      const datalist = document.getElementById('handOptions');
+      const allowed = Array.from(datalist.options).map(opt => opt.value);
+      if (allowed.includes(value)) {
+        return; // Valid as-is.
+      } else {
+        // Check for a case-insensitive match.
+        const matched = allowed.find(v => v.toLowerCase() === value.toLowerCase());
+        if (matched) {
+          input.value = matched;
+        } else {
+          input.value = "";
+        }
+      }
+    }
+    
+    // createHandRow() creates a hand box containing a row of dropdowns and control buttons.
     function createHandRow() {
       const box = document.createElement('div');
       box.className = 'hand-box';
@@ -349,8 +374,12 @@
         const handCard = document.createElement('input');
         handCard.type = 'text';
         handCard.className = 'hand-card';
-        handCard.value = "[Any card]";
+        handCard.placeholder = 'Card name or tag';
         handCard.setAttribute('list', 'handOptions');
+        // Validate when focus is lost.
+        handCard.addEventListener('blur', () => {
+          validateHandCardInput(handCard);
+        });
         row.appendChild(handCard);
       }
       
@@ -373,7 +402,7 @@
         if (container.children.length > 1) {
           box.remove();
         } else {
-          row.querySelectorAll('input.hand-card').forEach(input => input.value = "[Any card]");
+          row.querySelectorAll('input.hand-card').forEach(input => input.value = "");
         }
       });
       
@@ -382,7 +411,7 @@
       duplicateBtn.title = 'Duplicate this hand row';
       duplicateBtn.addEventListener('click', () => {
         const newBox = createHandRow();
-        // Copy values from current row to duplicate
+        // Copy current hand card values into the duplicate.
         const currentInputs = box.querySelectorAll('input.hand-card');
         const newInputs = newBox.querySelectorAll('input.hand-card');
         currentInputs.forEach((input, i) => {
@@ -411,9 +440,12 @@
             const handCard = document.createElement('input');
             handCard.type = 'text';
             handCard.className = 'hand-card';
-            handCard.value = "[Any card]";
+            handCard.placeholder = 'Card name or tag';
             handCard.setAttribute('list', 'handOptions');
-            row.insertBefore(handCard, box.querySelector('.hand-controls'));
+            handCard.addEventListener('blur', () => {
+              validateHandCardInput(handCard);
+            });
+            row.appendChild(handCard);
           }
         } else if (currentCount > handSize) {
           for (let i = currentCount; i > handSize; i--) {
