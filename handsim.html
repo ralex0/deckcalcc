@@ -1,42 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yu-Gi-Oh! Hand simulator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yu-Gi-Oh! Hand Simulator</title>
   <style>
+    /* Global Styles */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
-      background-color: #121212;
+      background: #121212;
       color: #e0e0e0;
       transition: background-color 0.3s, color 0.3s;
     }
     .container {
-      max-width: 800px;
+      max-width: 1000px;
       margin: auto;
       background: #1e1e1e;
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     }
     h1 {
       text-align: center;
       margin-bottom: 10px;
     }
-    /* Description under title */
     #description {
       text-align: center;
       margin-bottom: 20px;
       font-size: 1.1em;
     }
-    /* Top Controls Styles */
+    
+    /* Top Controls */
     .top-controls {
       display: flex;
+      justify-content: center;
       align-items: center;
       gap: 10px;
-      flex-wrap: nowrap;
-      justify-content: center;
       margin-bottom: 10px;
     }
     .top-controls button {
@@ -44,12 +47,12 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      background-color: #555;
+      background: #555;
       color: #e0e0e0;
       transition: background 0.3s;
     }
     .top-controls button:hover {
-      background-color: #777;
+      background: #777;
     }
     .control-group {
       display: flex;
@@ -78,11 +81,13 @@
       margin-top: 10px;
       display: none;
     }
-    /* Row Layout */
+    
+    /* Layout */
     .row {
-      display: flex;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
       gap: 20px;
-      align-items: flex-start;
+      align-items: start;
     }
     .left-pane, .right-pane {
       background: #2e2e2e;
@@ -90,18 +95,14 @@
       border-radius: 6px;
     }
     .left-pane {
-      flex: 2;
       min-height: 600px;
     }
-    .right-pane {
-      flex: 1;
-    }
-    /* Header Container Styles for Both Panes */
+    
+    /* Headers */
     .deck-header-container {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: nowrap;
       margin-bottom: 10px;
     }
     .deck-header {
@@ -113,56 +114,41 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      background-color: #555;
+      background: #555;
       color: #e0e0e0;
       transition: background 0.3s;
     }
     .deck-header-container button:hover {
-      background-color: #777;
+      background: #777;
     }
-    /* Decklist Styles */
+    
+    /* Decklist */
     .decklist-row {
       display: flex;
       align-items: center;
       gap: 10px;
       margin-bottom: 8px;
     }
-    .decklist-row input[type="number"] {
+    .decklist-row input[type="number"],
+    .decklist-row input[type="text"] {
       padding: 4px;
       border: 1px solid #555;
       border-radius: 4px;
       background: #2e2e2e;
       color: #e0e0e0;
     }
-    .decklist-row input[type="number"].qty-field {
+    .qty-field {
       width: 60px;
     }
-    .decklist-row input.card-name {
+    .card-name {
       flex: 2;
-      padding: 4px;
-      border: 1px solid #555;
-      border-radius: 4px;
-      background: #2e2e2e;
-      color: #e0e0e0;
     }
-    .decklist-row input.aka-field {
+    .aka-field {
       flex: 1;
-      padding: 4px;
-      border: 1px solid #555;
-      border-radius: 4px;
-      background: #2e2e2e;
-      color: #e0e0e0;
     }
-    /* New Draw Field styling */
-    .decklist-row input.draw-field {
+    .draw-field {
       width: 60px;
-      padding: 4px;
-      border: 1px solid #555;
-      border-radius: 4px;
-      background: #2e2e2e;
-      color: #e0e0e0;
     }
-    /* Decklist Buttons */
     .decklist-buttons {
       display: flex;
       gap: 5px;
@@ -173,18 +159,19 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      background-color: #555;
+      background: #555;
       color: #e0e0e0;
       transition: background 0.3s;
     }
     .decklist-buttons button:hover {
-      background-color: #777;
+      background: #777;
     }
-    /* Hand Building Interface Styles */
+    
+    /* Hand Building */
     .hand-size-control {
-      margin: 0;
       display: flex;
       align-items: center;
+      margin: 0;
     }
     .hand-size-control label {
       margin-right: 5px;
@@ -211,7 +198,6 @@
       flex-wrap: wrap;
       margin-bottom: 5px;
     }
-    /* New wrapper for each hand card and its toggle */
     .hand-card-wrapper {
       display: flex;
       align-items: center;
@@ -222,11 +208,10 @@
       border-radius: 4px;
       background: #2e2e2e;
       color: #e0e0e0;
-      -webkit-appearance: menulist-button;
-      -moz-appearance: menulist-button;
       appearance: menulist-button;
+      width: 100%;
+      min-width: 0;
     }
-    /* 🛇 Toggle Button */
     .hand-toggle {
       background: transparent;
       border: none;
@@ -249,27 +234,27 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      background-color: #555;
+      background: #555;
       color: #e0e0e0;
       transition: background 0.3s;
     }
     .hand-controls button:hover {
-      background-color: #777;
+      background: #777;
     }
-    /* Light mode overrides */
+    
+    /* Light Mode Overrides */
     body.light-mode {
-      background-color: #f7f7f7;
+      background: #f7f7f7;
       color: #000;
     }
     body.light-mode .container {
       background: #fff;
       color: #000;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
-    body.light-mode .left-pane, 
+    body.light-mode .left-pane,
     body.light-mode .right-pane {
       background: #f0f0f0;
-      color: #000;
     }
     body.light-mode input[type="number"],
     body.light-mode input[type="text"] {
@@ -281,14 +266,14 @@
     body.light-mode .hand-controls button,
     body.light-mode .top-controls button,
     body.light-mode .deck-header-container button {
-      background-color: #ccc;
+      background: #ccc;
       color: #000;
     }
     body.light-mode .decklist-buttons button:hover,
     body.light-mode .hand-controls button:hover,
     body.light-mode .top-controls button:hover,
     body.light-mode .deck-header-container button:hover {
-      background-color: #aaa;
+      background: #aaa;
     }
     body.light-mode .hand-card {
       background: #fff;
@@ -306,7 +291,8 @@
       color: #000;
       border-color: #ccc;
     }
-    /* Fixed containers for theme toggle and donate button */
+    
+    /* Fixed Controls */
     #themeContainer {
       position: fixed;
       bottom: 20px;
@@ -318,17 +304,17 @@
       height: 40px;
       border: none;
       border-radius: 50%;
-      background-color: transparent;
+      background: transparent;
       color: inherit;
       font-size: 1.5em;
       cursor: pointer;
       transition: background 0.3s;
     }
     body:not(.light-mode) #themeToggle:hover {
-      background-color: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.2);
     }
     body.light-mode #themeToggle:hover {
-      background-color: rgba(0,0,0,0.1);
+      background: rgba(0, 0, 0, 0.1);
     }
     #donateContainer {
       position: fixed;
@@ -340,168 +326,166 @@
 </head>
 <body>
   <div class="container">
-    <h1>Yu-Gi-Oh! Hand simulator</h1>
+    <h1>Yu-Gi-Oh! Hand Simulator</h1>
     <p id="description">
-      This tool simulates drawing hands from your Yu-Gi-Oh! deck. Import your deck, set up your hand criteria (including “not” exclusions and draw effects), choose the number of trials and hand size, then click Calculate to see how often you get a successful hand.
+      This tool simulates drawing hands from your Yu-Gi-Oh! deck. Import your deck, set your hand criteria (including exclusions and draw effects), choose the number of trials and hand size, then click Calculate.
     </p>
-    
-    <!-- Top Controls (on one line) -->
     <div class="top-controls">
       <div class="control-group">
         <label for="numTrials">Number of test hands to draw:</label>
-        <input type="number" id="numTrials" value="100" min="1">
+        <input type="number" id="numTrials" value="100" min="1" />
       </div>
       <button id="calculateButton">Calculate</button>
     </div>
-    <!-- Result appears on a new row -->
     <div id="calcResult">Result: Placeholder</div>
-    
     <div class="row">
+      <!-- Left Pane: Decklist -->
       <div class="left-pane">
-        <!-- Decklist Header with Import Control -->
         <div class="deck-header-container">
           <div id="decklistHeader" class="deck-header">Main Deck (0)</div>
           <button id="importDeckButton">Import deck...</button>
         </div>
-        <div id="decklistContainer">
-          <!-- Decklist rows will be dynamically added here -->
-        </div>
+        <div id="decklistContainer"></div>
       </div>
+      <!-- Right Pane: Hand Targets -->
       <div class="right-pane">
-        <!-- Build Hands Header with Hand Size Control on one line -->
         <div class="deck-header-container">
-          <div id="handHeader" class="deck-header">Build Hands</div>
+          <div id="handHeader" class="deck-header">Targets</div>
           <div class="hand-size-control">
             <label for="handSizeInput">Hand Size:</label>
-            <input type="number" id="handSizeInput" value="5" min="1">
+            <input type="number" id="handSizeInput" value="5" min="1" />
           </div>
         </div>
-        <div id="handContainer">
-          <!-- Hand boxes will be dynamically added here -->
-        </div>
-        <!-- Datalist for hand dropdown options -->
+        <div id="handContainer"></div>
         <datalist id="handOptions"></datalist>
       </div>
     </div>
-    
-    <!-- Hidden file input remains for deck import -->
-    <input type="file" id="fileInput" accept=".ydk" style="display: none;">
+    <input type="file" id="fileInput" accept=".ydk" style="display: none;" />
   </div>
-  
-  <!-- Light/Dark Theme Toggle -->
+
+  <!-- Theme and Donate Controls -->
   <div id="themeContainer">
     <button id="themeToggle">☀️</button>
   </div>
-  
-  <!-- Donate Button -->
   <div id="donateContainer">
-    <script type="text/javascript" src="https://storage.ko-fi.com/cdn/widget/Widget_2.js"></script>
+    <script src="https://storage.ko-fi.com/cdn/widget/Widget_2.js" type="text/javascript"></script>
     <script type="text/javascript">
       kofiwidget2.init('Support the dev', '#72a4f2', 'Q5Q51BKX92');
       kofiwidget2.draw();
     </script>
   </div>
-  
+
   <script>
-    // ------------------------------
-    // Editable Decklist Functions
-    // ------------------------------
-    function createDecklistRow(quantity = 1, cardName = "", tags = "", draw = 0) {
+    // =============================
+    // Helper Functions
+    // =============================
+    function createInput(type, value, className, min, onInput, placeholder) {
+      const input = document.createElement('input');
+      input.type = type;
+      input.value = value;
+      if (min !== null) input.min = min;
+      if (className) input.className = className;
+      if (placeholder) input.placeholder = placeholder;
+      if (onInput) input.addEventListener('input', onInput);
+      return input;
+    }
+
+    function createButton(text, title, onClick) {
+      const btn = document.createElement('button');
+      btn.textContent = text;
+      btn.title = title;
+      btn.addEventListener('click', onClick);
+      return btn;
+    }
+
+    // Creates a hand card wrapper element (select and toggle)
+    function createHandCardWrapper() {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'hand-card-wrapper';
+
+      const select = document.createElement('select');
+      select.className = 'hand-card';
+      const defaultOption = document.createElement('option');
+      defaultOption.textContent = "Card name or tag";
+      defaultOption.disabled = true;
+      defaultOption.selected = true;
+      select.appendChild(defaultOption);
+
+      // Populate options from datalist
+      const dl = document.getElementById('handOptions');
+      Array.from(dl.options).forEach(o => {
+        const option = document.createElement('option');
+        option.value = o.value;
+        option.textContent = o.value;
+        select.appendChild(option);
+      });
+
+      select.addEventListener('blur', () => validateHandCardInput(select));
+
+      const toggle = createButton('🛇', '', e => {
+        e.preventDefault();
+        toggle.classList.toggle('active');
+        select.dataset.exclude = toggle.classList.contains('active');
+      });
+      toggle.className = 'hand-toggle';
+
+      wrapper.append(select, toggle);
+      return wrapper;
+    }
+
+    // =============================
+    // Decklist Functions
+    // =============================
+    function createDecklistRow(q = 1, name = "", tags = "", draw = 0) {
       const row = document.createElement('div');
       row.className = 'decklist-row';
-      
-      const qtyInput = document.createElement('input');
-      qtyInput.type = 'number';
-      qtyInput.min = 1;
-      qtyInput.value = quantity;
-      qtyInput.classList.add("qty-field");
-      qtyInput.addEventListener('input', () => {
+
+      const qtyInput = createInput('number', q, 'qty-field', 1, () => {
         updateDeckHeader();
         updateHandOptions();
       });
-      
-      const nameInput = document.createElement('input');
-      nameInput.type = 'text';
-      nameInput.placeholder = 'Card Name';
-      nameInput.value = cardName;
-      nameInput.classList.add('card-name');
-      nameInput.addEventListener('input', updateHandOptions);
-      
-      const tagsInput = document.createElement('input');
-      tagsInput.type = 'text';
-      tagsInput.placeholder = 'List Tags: Starter, Handtrap, etc';
-      tagsInput.value = tags;
-      tagsInput.classList.add('aka-field');
-      tagsInput.addEventListener('input', updateHandOptions);
-      
-      const drawInput = document.createElement('input');
-      drawInput.type = 'number';
-      drawInput.min = 0;
-      drawInput.value = draw;
-      drawInput.classList.add('draw-field');
-      drawInput.placeholder = 'Draw';
-      drawInput.addEventListener('input', () => {
-        // You may call a function to update calculations if needed.
-      });
-      
+      const nameInput = createInput('text', name, 'card-name', null, updateHandOptions, 'Card Name');
+      const tagsInput = createInput('text', tags, 'aka-field', null, updateHandOptions, 'List Tags: Starter, Handtrap, etc');
+      const drawInput = createInput('number', draw, 'draw-field', 0, updateHandOptions, 'Draw');
+
       const btnContainer = document.createElement('div');
       btnContainer.className = 'decklist-buttons';
-      
-      const addBtn = document.createElement('button');
-      addBtn.textContent = '+';
-      addBtn.title = 'Add a new decklist row below';
-      addBtn.addEventListener('click', () => {
-        const newRow = createDecklistRow();
-        row.parentNode.insertBefore(newRow, row.nextSibling);
+      const addBtn = createButton('+', 'Add row', () => {
+        row.parentNode.insertBefore(createDecklistRow(), row.nextSibling);
         updateDeckHeader();
         updateHandOptions();
       });
-      
-      const removeBtn = document.createElement('button');
-      removeBtn.textContent = '–';
-      removeBtn.title = 'Remove this decklist row';
-      removeBtn.addEventListener('click', () => {
+      const removeBtn = createButton('–', 'Remove row', () => {
         const container = document.getElementById('decklistContainer');
         if (container.querySelectorAll('.decklist-row').length > 1) {
           row.remove();
-          updateDeckHeader();
-          updateHandOptions();
         } else {
           qtyInput.value = 1;
           nameInput.value = "";
           tagsInput.value = "";
           drawInput.value = 0;
-          updateDeckHeader();
-          updateHandOptions();
         }
+        updateDeckHeader();
+        updateHandOptions();
       });
-      
-      btnContainer.appendChild(addBtn);
-      btnContainer.appendChild(removeBtn);
-      
-      row.appendChild(qtyInput);
-      row.appendChild(nameInput);
-      row.appendChild(tagsInput);
-      row.appendChild(drawInput);
-      row.appendChild(btnContainer);
-      
+      btnContainer.append(addBtn, removeBtn);
+
+      row.append(qtyInput, nameInput, tagsInput, drawInput, btnContainer);
       return row;
     }
-    
+
     function updateDeckHeader() {
-      const container = document.getElementById('decklistContainer');
       let total = 0;
-      container.querySelectorAll('.decklist-row').forEach(row => {
-        const qtyInput = row.querySelector('input.qty-field');
-        total += parseInt(qtyInput.value) || 0;
+      document.querySelectorAll('#decklistContainer .decklist-row').forEach(row => {
+        total += parseInt(row.querySelector('input.qty-field').value) || 0;
       });
       document.getElementById('decklistHeader').textContent = `Main Deck (${total})`;
     }
-    
+
     function initDecklist(data) {
       const container = document.getElementById('decklistContainer');
       container.innerHTML = "";
-      if (data.length === 0) {
+      if (!data.length) {
         container.appendChild(createDecklistRow());
       } else {
         data.forEach(item => {
@@ -510,48 +494,41 @@
       }
       updateDeckHeader();
       updateHandOptions();
-      document.dispatchEvent(new Event('decklistLoaded'));
     }
-    
-    // ------------------------------
-    // Hand Building Functions
-    // ------------------------------
+
+    // =============================
+    // Hand Functions
+    // =============================
     function updateHandOptions() {
-      const deckContainer = document.getElementById('decklistContainer');
       const optionsSet = new Set();
-      deckContainer.querySelectorAll('.decklist-row').forEach(row => {
+      document.querySelectorAll('#decklistContainer .decklist-row').forEach(row => {
         const cardName = row.querySelector('input.card-name').value.trim();
-        if (cardName) {
-          optionsSet.add(cardName);
-        }
-        const tagsText = row.querySelector('input.aka-field').value;
-        if (tagsText) {
-          tagsText.split(',').forEach(tag => {
-            const trimmed = tag.trim();
-            if (trimmed) {
-              optionsSet.add(trimmed);
-            }
+        if (cardName) optionsSet.add(cardName);
+        const tags = row.querySelector('input.aka-field').value;
+        if (tags) {
+          tags.split(',').forEach(tag => {
+            if (tag.trim()) optionsSet.add(tag.trim());
           });
         }
       });
-      const optionsArray = Array.from(optionsSet);
-      optionsArray.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      const optionsArray = Array.from(optionsSet).sort((a, b) => a.localeCompare(b));
       optionsArray.unshift("[Any Card]");
-      
-      const datalist = document.getElementById('handOptions');
-      datalist.innerHTML = "";
+
+      const dl = document.getElementById('handOptions');
+      dl.innerHTML = "";
       optionsArray.forEach(opt => {
         const optionElem = document.createElement('option');
         optionElem.value = opt;
-        datalist.appendChild(optionElem);
+        dl.appendChild(optionElem);
       });
+
       updateAllHandRows();
       updateHandSelectOptions();
     }
-    
+
     function updateHandSelectOptions() {
-      const datalist = document.getElementById('handOptions');
-      const newOptions = Array.from(datalist.options).map(opt => ({ value: opt.value, text: opt.value }));
+      const dl = document.getElementById('handOptions');
+      const options = Array.from(dl.options).map(o => ({ value: o.value, text: o.value }));
       document.querySelectorAll('select.hand-card').forEach(select => {
         const currentVal = select.value;
         select.innerHTML = "";
@@ -560,242 +537,150 @@
         defaultOption.disabled = true;
         defaultOption.selected = true;
         select.appendChild(defaultOption);
-        newOptions.forEach(optData => {
+        options.forEach(opt => {
           const optionElem = document.createElement('option');
-          optionElem.value = optData.value;
-          optionElem.textContent = optData.text;
+          optionElem.value = opt.value;
+          optionElem.textContent = opt.text;
           select.appendChild(optionElem);
         });
-        const allowedValues = newOptions.map(opt => opt.value);
-        if (allowedValues.includes(currentVal)) {
+        if (options.map(o => o.value).includes(currentVal)) {
           select.value = currentVal;
         }
       });
     }
-    
+
     function validateHandCardInput(input) {
-      let value = input.value.trim();
-      if (!value) return;
-      const datalist = document.getElementById('handOptions');
-      const allowed = Array.from(datalist.options).map(opt => opt.value);
-      if (allowed.includes(value)) {
-        return;
-      } else {
-        const matched = allowed.find(v => v.toLowerCase() === value.toLowerCase());
-        if (matched) {
-          input.value = matched;
-        } else {
-          input.value = "";
-        }
+      const val = input.value.trim();
+      if (!val) return;
+      const allowed = Array.from(document.getElementById('handOptions').options).map(o => o.value);
+      if (!allowed.includes(val)) {
+        const matched = allowed.find(v => v.toLowerCase() === val.toLowerCase());
+        input.value = matched || "";
       }
     }
-    
+
     function createHandRow() {
-      const box = document.createElement('div');
-      box.className = 'hand-box';
-      
-      const row = document.createElement('div');
-      row.className = 'hand-row';
-      const handSize = parseInt(document.getElementById('handSizeInput').value) || 5;
-      for (let i = 0; i < handSize; i++) {
-        const cardWrapper = document.createElement('div');
-        cardWrapper.className = 'hand-card-wrapper';
-        
-        const handCard = document.createElement('select');
-        handCard.className = 'hand-card';
-        const defaultOption = document.createElement('option');
-        defaultOption.textContent = "Card name or tag";
-        defaultOption.disabled = true;
-        defaultOption.selected = true;
-        handCard.appendChild(defaultOption);
-        const datalist = document.getElementById('handOptions');
-        Array.from(datalist.options).forEach(opt => {
-          const optionElem = document.createElement('option');
-          optionElem.value = opt.value;
-          optionElem.textContent = opt.value;
-          handCard.appendChild(optionElem);
-        });
-        handCard.addEventListener('blur', () => {
-          validateHandCardInput(handCard);
-        });
-        
-        const toggleButton = document.createElement('button');
-        toggleButton.className = 'hand-toggle';
-        toggleButton.textContent = '🛇';
-        toggleButton.addEventListener('click', (e) => {
-          e.preventDefault();
-          toggleButton.classList.toggle('active');
-          handCard.dataset.exclude = toggleButton.classList.contains('active');
-        });
-        
-        cardWrapper.appendChild(handCard);
-        cardWrapper.appendChild(toggleButton);
-        row.appendChild(cardWrapper);
+      const handBox = document.createElement('div');
+      handBox.className = 'hand-box';
+
+      const handRow = document.createElement('div');
+      handRow.className = 'hand-row';
+      const size = parseInt(document.getElementById('handSizeInput').value) || 5;
+      for (let i = 0; i < size; i++) {
+        handRow.appendChild(createHandCardWrapper());
       }
-      
-      const controlContainer = document.createElement('div');
-      controlContainer.className = 'hand-controls';
-      
-      const addBtn = document.createElement('button');
-      addBtn.textContent = '+';
-      addBtn.title = 'Add a new hand row below';
-      addBtn.addEventListener('click', () => {
-        const newBox = createHandRow();
-        box.parentNode.insertBefore(newBox, box.nextSibling);
+
+      const handControls = document.createElement('div');
+      handControls.className = 'hand-controls';
+      const addRowBtn = createButton('+', 'Add row', () => {
+        handBox.parentNode.insertBefore(createHandRow(), handBox.nextSibling);
       });
-      
-      const removeBtn = document.createElement('button');
-      removeBtn.textContent = '–';
-      removeBtn.title = 'Remove this hand row';
-      removeBtn.addEventListener('click', () => {
+      const removeRowBtn = createButton('–', 'Remove row', () => {
         const container = document.getElementById('handContainer');
         if (container.children.length > 1) {
-          box.remove();
+          handBox.remove();
         } else {
-          row.querySelectorAll('select.hand-card').forEach(select => select.selectedIndex = 0);
+          handRow.querySelectorAll('select.hand-card').forEach(select => (select.selectedIndex = 0));
         }
       });
-      
-      const duplicateBtn = document.createElement('button');
-      duplicateBtn.textContent = '⧉';
-      duplicateBtn.title = 'Duplicate this hand row';
-      duplicateBtn.addEventListener('click', () => {
-        const newBox = createHandRow();
-        const currentSelects = box.querySelectorAll('select.hand-card');
-        const newSelects = newBox.querySelectorAll('select.hand-card');
-        currentSelects.forEach((select, i) => {
-          newSelects[i].value = select.value;
+      const duplicateRowBtn = createButton('⧉', 'Duplicate row', () => {
+        const newHandBox = createHandRow();
+        const currentSelects = handBox.querySelectorAll('select.hand-card');
+        const newSelects = newHandBox.querySelectorAll('select.hand-card');
+        currentSelects.forEach((sel, i) => {
+          newSelects[i].value = sel.value;
         });
-        box.parentNode.insertBefore(newBox, box.nextSibling);
+        handBox.parentNode.insertBefore(newHandBox, handBox.nextSibling);
       });
-      
-      controlContainer.appendChild(addBtn);
-      controlContainer.appendChild(removeBtn);
-      controlContainer.appendChild(duplicateBtn);
-      
-      box.appendChild(row);
-      box.appendChild(controlContainer);
-      return box;
+      handControls.append(addRowBtn, removeRowBtn, duplicateRowBtn);
+
+      handBox.append(handRow, handControls);
+      return handBox;
     }
-    
+
     function updateAllHandRows() {
-      const handSize = parseInt(document.getElementById('handSizeInput').value) || 5;
-      const handContainer = document.getElementById('handContainer');
-      handContainer.querySelectorAll('.hand-box').forEach(box => {
-        const row = box.querySelector('.hand-row');
-        const currentCount = row.querySelectorAll('.hand-card').length;
-        if (currentCount < handSize) {
-          for (let i = currentCount; i < handSize; i++) {
-            const cardWrapper = document.createElement('div');
-            cardWrapper.className = 'hand-card-wrapper';
-            
-            const handCard = document.createElement('select');
-            handCard.className = 'hand-card';
-            const defaultOption = document.createElement('option');
-            defaultOption.textContent = "Card name or tag";
-            defaultOption.disabled = true;
-            defaultOption.selected = true;
-            handCard.appendChild(defaultOption);
-            const datalist = document.getElementById('handOptions');
-            Array.from(datalist.options).forEach(opt => {
-              const optionElem = document.createElement('option');
-              optionElem.value = opt.value;
-              optionElem.textContent = opt.value;
-              handCard.appendChild(optionElem);
-            });
-            handCard.addEventListener('blur', () => {
-              validateHandCardInput(handCard);
-            });
-            
-            const toggleButton = document.createElement('button');
-            toggleButton.className = 'hand-toggle';
-            toggleButton.textContent = '🛇';
-            toggleButton.addEventListener('click', (e) => {
-              e.preventDefault();
-              toggleButton.classList.toggle('active');
-              handCard.dataset.exclude = toggleButton.classList.contains('active');
-            });
-            
-            cardWrapper.appendChild(handCard);
-            cardWrapper.appendChild(toggleButton);
-            row.appendChild(cardWrapper);
+      const size = parseInt(document.getElementById('handSizeInput').value) || 5;
+      document.querySelectorAll('#handContainer .hand-box').forEach(handBox => {
+        const handRow = handBox.querySelector('.hand-row');
+        const currentCount = handRow.querySelectorAll('.hand-card').length;
+        if (currentCount < size) {
+          for (let i = currentCount; i < size; i++) {
+            handRow.appendChild(createHandCardWrapper());
           }
-        } else if (currentCount > handSize) {
-          for (let i = currentCount; i > handSize; i--) {
-            const cardWrappers = row.querySelectorAll('.hand-card-wrapper');
-            cardWrappers[cardWrappers.length - 1].remove();
+        } else if (currentCount > size) {
+          for (let i = currentCount; i > size; i--) {
+            const wrappers = handRow.querySelectorAll('.hand-card-wrapper');
+            wrappers[wrappers.length - 1].remove();
           }
         }
       });
       updateHandSelectOptions();
     }
-    
+
     function initHandContainer() {
       const container = document.getElementById('handContainer');
       container.innerHTML = "";
       container.appendChild(createHandRow());
     }
-    
-    // ------------------------------
-    // File Parsing and Integration
-    // ------------------------------
+
+    // =============================
+    // File Integration Functions
+    // =============================
     function parseYDK(text) {
       const lines = text.split(/\r?\n/);
       const main = [];
-      let currentSection = "main";
-      for (let line of lines) {
+      let section = "main";
+      lines.forEach(line => {
         line = line.trim();
-        if (!line) continue;
+        if (!line) return;
         if (line.startsWith("#")) {
-          currentSection = (line.toLowerCase() === "#main") ? "main" : "other";
-          continue;
+          section = (line.toLowerCase() === "#main") ? "main" : "other";
+          return;
         }
         if (line.startsWith("!")) {
-          currentSection = "other";
-          continue;
+          section = "other";
+          return;
         }
-        if (!isNaN(line) && currentSection === "main") {
+        if (!isNaN(line) && section === "main") {
           main.push(line);
         }
-      }
+      });
       return main;
     }
-    
+
     async function fetchCardDetails(ids) {
       const uniqueIds = Array.from(new Set(ids));
-      const parameter = uniqueIds.join(",");
-      const response = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?utm_source=storm-access&misc=yes&id=${parameter}`);
-      const payload = await response.json();
+      const param = uniqueIds.join(",");
+      const res = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?utm_source=storm-access&misc=yes&id=${param}`);
+      const payload = await res.json();
       const cardMap = new Map();
-      for (const card of payload.data) {
-        cardMap.set(String(card.id), card);
-      }
+      payload.data.forEach(card => cardMap.set(String(card.id), card));
       return cardMap;
     }
-    
+
     document.getElementById('fileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async function(event) {
         const text = event.target.result;
-        const mainDeckIDs = parseYDK(text);
-        if (mainDeckIDs.length === 0) {
-          alert('No cards found in the file.');
+        const ids = parseYDK(text);
+        if (!ids.length) {
+          alert('No cards found.');
           return;
         }
         try {
-          const cardMap = await fetchCardDetails(mainDeckIDs);
+          const cardMap = await fetchCardDetails(ids);
           const counts = {};
-          mainDeckIDs.forEach(id => {
+          ids.forEach(id => {
             counts[id] = (counts[id] || 0) + 1;
           });
           const deckData = [];
           for (const id in counts) {
             const card = cardMap.get(id);
-            deckData.push({ 
-              quantity: counts[id], 
-              cardName: card ? card.name : `Unknown card (ID: ${id})`, 
+            deckData.push({
+              quantity: counts[id],
+              cardName: card ? card.name : `Unknown card (ID: ${id})`,
               tags: "",
               draw: 0
             });
@@ -804,201 +689,135 @@
         } catch (err) {
           alert('Error fetching card details: ' + err);
         }
-      }
+      };
       reader.readAsText(file);
     });
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      initDecklist([]);
-      initHandContainer();
-    });
-  </script>
-  
-  <!-- New Controls Script -->
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      // Trigger hidden file input when "Import deck..." is clicked
-      document.getElementById('importDeckButton').addEventListener('click', function() {
-        document.getElementById('fileInput').click();
-      });
-      
-      // Calculate button now runs the simulation
-      document.getElementById('calculateButton').addEventListener('click', function() {
-        runSimulation();
-      });
-      
-      // Update hand rows when hand size changes
-      document.getElementById('handSizeInput').addEventListener('input', function() {
-        updateAllHandRows();
-        updateHandSelectOptions();
-      });
-    });
-    
-    // ------------------------------
+
+    // =============================
     // Simulation Logic
-    // ------------------------------
+    // =============================
     function runSimulation() {
-      const numTrials = parseInt(document.getElementById('numTrials').value) || 100;
-      
-      // Build deck array from decklist rows
+      const trials = parseInt(document.getElementById('numTrials').value) || 100;
       const deck = [];
       document.querySelectorAll('#decklistContainer .decklist-row').forEach(row => {
         const qty = parseInt(row.querySelector('input.qty-field').value) || 0;
-        const cardName = row.querySelector('input.card-name').value.trim();
-        const tagsText = row.querySelector('input.aka-field').value.trim();
+        const name = row.querySelector('input.card-name').value.trim().toLowerCase();
+        const tags = (row.querySelector('input.aka-field').value || "")
+          .split(',')
+          .map(s => s.trim().toLowerCase())
+          .filter(Boolean);
         const draw = parseInt(row.querySelector('input.draw-field').value) || 0;
-        let tags = [];
-        if (tagsText) {
-          tags = tagsText.split(',').map(t => t.trim().toLowerCase());
-        }
-        const nameLower = cardName.toLowerCase();
         for (let i = 0; i < qty; i++) {
-          deck.push({
-            name: nameLower,
-            tags: tags,
-            draw: draw
-          });
+          deck.push({ name, tags, draw });
         }
       });
-      
-      if (deck.length === 0) {
+      if (!deck.length) {
         alert("Deck is empty!");
         return;
       }
-      
-      // Build hand templates from hand container
+
       const templates = [];
       document.querySelectorAll('#handContainer .hand-box').forEach(box => {
         const conditions = [];
-        const selects = box.querySelectorAll('.hand-row select.hand-card');
-        selects.forEach(select => {
+        box.querySelectorAll('.hand-row select.hand-card').forEach(select => {
           const val = select.value.trim();
           if (val === "" || val === "Card name or tag") return;
-          conditions.push({
-            value: val.toLowerCase(),
-            exclude: (select.dataset.exclude === "true")
-          });
+          conditions.push({ value: val.toLowerCase(), exclude: (select.dataset.exclude === "true") });
         });
-        if (conditions.length > 0) {
-          templates.push(conditions);
-        }
+        if (conditions.length) templates.push(conditions);
       });
-      
-      if (templates.length === 0) {
+      if (!templates.length) {
         alert("No hand templates defined!");
         return;
       }
-      
-      let successCount = 0;
-      for (let trial = 0; trial < numTrials; trial++) {
-        // Create a copy of the deck and shuffle it
+
+      let successes = 0;
+      for (let t = 0; t < trials; t++) {
         let deckCopy = deck.slice();
         shuffle(deckCopy);
-        const handSize = parseInt(document.getElementById('handSizeInput').value) || 5;
-        let hand = deckCopy.splice(0, handSize);
-        // Mark drawn cards as not processed for draw effects
-        hand.forEach(card => { card.processed = false; });
-        
-        let trialSuccess = false;
+        const size = parseInt(document.getElementById('handSizeInput').value) || 5;
+        let hand = deckCopy.splice(0, size);
+        hand.forEach(card => card.processed = false);
+        let success = false;
         if (checkHandTemplates(hand, templates)) {
-          trialSuccess = true;
+          success = true;
         } else {
-          // Process draw chaining
           while (true) {
-            let drawCount = 0;
+            let extra = 0;
             hand.forEach(card => {
               if (!card.processed && card.draw > 0) {
-                drawCount += card.draw;
+                extra += card.draw;
                 card.processed = true;
               }
             });
-            if (drawCount <= 0) break;
-            if (deckCopy.length === 0) break;
-            let additional = deckCopy.splice(0, drawCount);
-            additional.forEach(card => { card.processed = false; });
-            hand = hand.concat(additional);
+            if (extra <= 0 || !deckCopy.length) break;
+            const drawCount = Math.min(extra, deckCopy.length);
+            const extras = deckCopy.splice(0, drawCount);
+            extras.forEach(card => card.processed = false);
+            hand = hand.concat(extras);
             if (checkHandTemplates(hand, templates)) {
-              trialSuccess = true;
+              success = true;
               break;
             }
           }
         }
-        if (trialSuccess) successCount++;
+        if (success) successes++;
       }
-      
-      const resultText = `Result: ${successCount} successes out of ${numTrials} trials (${((successCount/numTrials)*100).toFixed(2)}%)`;
-      const resultElem = document.getElementById('calcResult');
-      resultElem.textContent = resultText;
-      resultElem.style.display = "block";
+      const perc = (successes / trials * 100).toFixed(2);
+      const resElem = document.getElementById('calcResult');
+      resElem.textContent = `Result: ${successes} successes out of ${trials} trials (${perc}%)`;
+      resElem.style.display = "block";
     }
-    
-    // Fisher-Yates shuffle
+
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
       }
     }
-    
-    // Check if hand satisfies any of the templates
+
     function checkHandTemplates(hand, templates) {
-      for (let template of templates) {
+      for (const template of templates) {
         if (checkTemplate(hand, template)) return true;
       }
       return false;
     }
-    
-    // Check a single template: first test exclude conditions, then try to satisfy include conditions
+
     function checkTemplate(hand, conditions) {
-      // Check excludes: if any exclude condition is matched, template fails.
-      for (let cond of conditions) {
-        if (cond.exclude) {
-          if (handMatchesCondition(hand, cond.value)) {
-            return false;
-          }
-        }
+      for (const condition of conditions) {
+        if (condition.exclude && handMatches(hand, condition.value)) return false;
       }
-      // Gather include conditions
-      let includes = conditions.filter(cond => !cond.exclude);
-      if (includes.length === 0) return true;
-      return canSatisfyConditions(includes, hand);
+      const includes = conditions.filter(c => !c.exclude);
+      if (!includes.length) return true;
+      return canSatisfy(includes, hand);
     }
-    
-    // For exclude conditions: does any card in hand match the condition?
-    function handMatchesCondition(hand, condValue) {
-      for (let card of hand) {
-        if (cardMatches(card, condValue)) {
-          return true;
-        }
-      }
-      return false;
+
+    function handMatches(hand, value) {
+      return hand.some(card => cardMatches(card, value));
     }
-    
-    // Check if a card matches a condition (by name or tag). "[Any Card]" always matches.
-    function cardMatches(card, condValue) {
-      if (condValue === "[any card]") return true;
-      if (card.name === condValue) return true;
-      if (card.tags && card.tags.includes(condValue)) return true;
-      return false;
+
+    function cardMatches(card, value) {
+      if (value === "[any card]") return true;
+      return card.name === value || (card.tags && card.tags.includes(value));
     }
-    
-    // Recursive matching for include conditions (each card used at most once)
-    function canSatisfyConditions(conditions, handCards) {
-      if (conditions.length === 0) return true;
-      for (let i = 0; i < handCards.length; i++) {
-        if (cardMatches(handCards[i], conditions[0].value)) {
-          let remaining = handCards.slice(0, i).concat(handCards.slice(i+1));
-          if (canSatisfyConditions(conditions.slice(1), remaining)) return true;
+
+    function canSatisfy(conditions, cards) {
+      if (!conditions.length) return true;
+      for (let i = 0; i < cards.length; i++) {
+        if (cardMatches(cards[i], conditions[0].value)) {
+          const remaining = cards.slice(0, i).concat(cards.slice(i + 1));
+          if (canSatisfy(conditions.slice(1), remaining)) return true;
         }
       }
       return false;
     }
-  </script>
-  
-  <!-- Theme Toggle Script -->
-  <script>
+
+    // =============================
+    // Theme Toggle Functions
+    // =============================
     const themeToggleBtn = document.getElementById("themeToggle");
-    const applyTheme = theme => {
+
+    function applyTheme(theme) {
       if (theme === "light") {
         document.body.classList.add("light-mode");
         themeToggleBtn.textContent = "🌙";
@@ -1006,19 +825,37 @@
         document.body.classList.remove("light-mode");
         themeToggleBtn.textContent = "☀️";
       }
-    };
-    const toggleTheme = () => {
+    }
+
+    function toggleTheme() {
       const current = localStorage.getItem("theme") || "dark";
       const next = current === "dark" ? "light" : "dark";
       localStorage.setItem("theme", next);
       applyTheme(next);
-    };
+    }
     themeToggleBtn.addEventListener("click", toggleTheme);
-    const initTheme = () => {
-      const saved = localStorage.getItem("theme") || "dark";
-      applyTheme(saved);
-    };
-    document.addEventListener("DOMContentLoaded", initTheme);
+
+    // =============================
+    // Initialization (DOMContentLoaded)
+    // =============================
+    document.addEventListener("DOMContentLoaded", () => {
+      // Initialize decklist and hand container
+      initDecklist([]);
+      initHandContainer();
+
+      // Attach event listeners for controls
+      document.getElementById('importDeckButton').addEventListener('click', () => {
+        document.getElementById('fileInput').click();
+      });
+      document.getElementById('calculateButton').addEventListener('click', runSimulation);
+      document.getElementById('handSizeInput').addEventListener('input', () => {
+        updateAllHandRows();
+        updateHandSelectOptions();
+      });
+
+      // Apply saved theme or default to dark mode
+      applyTheme(localStorage.getItem("theme") || "dark");
+    });
   </script>
 </body>
 </html>
